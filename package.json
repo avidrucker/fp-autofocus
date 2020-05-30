@@ -2,9 +2,11 @@
   "name": "fp-autofocus",
   "version": "1.0.0",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "@types/node": "^14.0.6"
+  },
   "scripts": {
-		"start": "ts-node src/index.ts",
+    "start": "ts-node src/index.ts",
     "build": "tsc && node src/index.js"
   },
   "keywords": [],
