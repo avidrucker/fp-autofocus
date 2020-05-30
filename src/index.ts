@@ -21,12 +21,26 @@ type IItem = {
 
 // type AppState = 'menu' | 'viewing' | 'marking' | 'doing' | 'adding';
 
+// const makeChoice = (x: AppState[]) => 'viewing'; // TODO: implement this stub
+
 // const AppStateMachine = {
-// 	fromMenu: ['viewing', 'marking', 'doing', 'adding'],
-// 	fromViewing: 'menu',
-// 	fromMarking: 'menu',
-// 	fromDoing: 'menu',
-// 	fromAdding: 'menu'
+// 	state: 'menu',
+// 	transitions: {
+// 		'menu': () => makeChoice(['viewing', 'marking', 'doing', 'adding']),
+// 		'viewing': () => 'menu',
+// 		'marking': () => 'menu',
+// 		'doing': () => 'menu',
+// 		'adding': () => 'menu'
+// 	},
+// 	dispatch: function (actionName: any) {
+// 		const action: any = this.transitions[this.state][actionName];
+
+// 		if (action) {
+// 				action.call(this);
+// 		} else {
+// 				console.log('invalid action');
+// 		}
+// 	}
 // }
 
 const newItem = (s: string): IItem =>
@@ -85,7 +99,7 @@ const main = () => {
 	printList(stringifyList(myList));
 
 	sampleQuestion('What is 2 + 2?');
-	sampleQuestion('What is your name?'); // BUG: this does not get called, it seems
+	// sampleQuestion('What is your name?'); // BUG: this does not get called, it seems
 }
 
 main();
