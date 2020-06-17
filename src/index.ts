@@ -1,5 +1,6 @@
 // const fs = require('fs');
-const readline = require('readline');
+import { createInterface } from 'readline'
+import { Task } from 'fp-ts/lib/Task'
 
 type ItemStatus =  'noDot' | 'dotted' | 'done';
 
@@ -74,21 +75,26 @@ const greet = (): void =>
 // 	'Add New To-Do', 'Review & Dot To-Do\'s',
 // 	'Focus on To-Do', 'Quit Program']; // 'Read About AutoFocus'
 
-// TODO: wrap readline in promise interface
-let rl = readline.createInterface({
-	input: process.stdin,
-	output: process.stdout
-});
+// question: How may I ask the user a question?
+// question: May I pass an argument into
+// rl.question via a Task parameter?
+const read: Task<string> = () =>
+  new Promise<string>(resolve => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout
+    })
+    rl.question(`Am parameterizable question???`, answer => {
+      rl.close()
+      resolve(answer)
+    })
+  })
 
-// TODO: wrap sampleQuestion in promise interface
-const sampleQuestion = (q: string) => {
-	rl.question(`${q} `, (answer: string) => {
-		console.log(`Thank you, you said: ${answer}`);
-		rl.close();
-	});
+const printAnswer = (s: string): void => {
+	console.log(`Thank you, you said: ${s}`);
 }
 
-const main = () => {
+const main = async () => {
 	greet();
 
 	// let myList: IItem[] = []; // initialize empty list
@@ -98,7 +104,7 @@ const main = () => {
 
 	printList(stringifyList(myList));
 
-	sampleQuestion('What is 2 + 2?');
+	printAnswer(await read());
 	// sampleQuestion('What is your name?'); // BUG: this does not get called, it seems
 }
 
