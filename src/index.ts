@@ -1,3 +1,6 @@
+const readline = require('readline')
+const Future = require('fluture')
+
 // const fs = require('fs');
 import { createInterface } from 'readline'
 import { Task } from 'fp-ts/lib/Task'
@@ -50,6 +53,12 @@ const newItem = (s: string): IItem =>
 const stringifyVerbose = (i: IItem): string =>
 	`Item: '${i.textName}', status: ${i.status}` // , ${i.isHidden ? 'hidden' : 'not hidden'}
 
+const dotItem = (i: IItem): IItem =>
+	({status: 'dotted', textName: i.textName})
+
+const completeItem = (i: IItem): IItem =>
+	({status: 'done', textName: i.textName})
+
 const statusToMark = (x: ItemStatus): string =>
 	`${x}`
 
@@ -75,24 +84,35 @@ const greet = (): void =>
 // 	'Add New To-Do', 'Review & Dot To-Do\'s',
 // 	'Focus on To-Do', 'Quit Program']; // 'Read About AutoFocus'
 
-// question: How may I ask the user a question?
-// question: May I pass an argument into
-// rl.question via a Task parameter?
-const read: Task<string> = () =>
-  new Promise<string>(resolve => {
-    const rl = createInterface({
-      input: process.stdin,
-      output: process.stdout
-    })
-    rl.question(`Am parameterizable question???`, answer => {
-      rl.close()
-      resolve(answer)
-    })
-  })
+// TODO: add Future here to get user IO for menu answer input (number 1 - 7, no enter needed)
+// TODO: add Future here to get user IO for new todo input (any text or "Q" to quit, enter to submit)
 
 const printAnswer = (s: string): void => {
 	console.log(`Thank you, you said: ${s}`);
 }
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
+
+// source: Petri Kola @pe3 Feb 15 2018 05:56
+// https://gitter.im/fluture-js/Fluture?at=5a85605f5cc187264540d644
+// const ask = (question: any) => Future ((rej: any, res: any) => {
+//   rl.question (question + ' ', res)
+// })
+
+// Future.do(function*(){
+// 	const firstName = yield ask('What is your first name?')
+// 	const familyName = yield ask('What is your family name?')
+// 	return 'Hello' + firstName + ' ' + familyName + '!'
+// })
+// .fork(console.error, console.log);
+
+const getName = (): Promise<string> =>
+	rl.question("hi, what's your name?");
+		// .then((x: any) => "banana")
+		// .catch((e: Error) => "cheese")
 
 const main = async () => {
 	greet();
@@ -104,8 +124,17 @@ const main = async () => {
 
 	printList(stringifyList(myList));
 
-	printAnswer(await read());
+	// printAnswer("hello");
 	// sampleQuestion('What is your name?'); // BUG: this does not get called, it seems
+
+	// await ask("What is your name?");
+	// .then((x: any) => console.log(x))
+	// .catch((e: any) => console.error(e));
+	getName().then(
+		(x: any) => console.log(`Hey ${x}`)
+	).catch(
+		(e: Error) => console.error(e)
+	)
 }
 
 main();
