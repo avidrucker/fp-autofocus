@@ -200,10 +200,10 @@ const main = () => {
 	printList(stringifyList(myList));
 
 	printBlankLine();
-	// await doIOtest();
-	// doStateTest();
-	// await doIOtest2();
-	printMenu(menuList)(menuTexts);
+	// await doIOtest(); // TEST: uncomment this line, and add 'async' just after 'const main ='
+	// doStateTest(); // TEST: uncomment this line
+	// await doIOtest2(); // TEST: uncomment this line, and add 'async' just after 'const main ='
+	printMenu(menuList)(menuTexts); // TODO: print menu conditionally depending on current app state
 
 	exit(0);
 }
