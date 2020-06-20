@@ -2,8 +2,10 @@ const readline = require('readline')
 const Future = require('fluture')
 
 // const fs = require('fs');
-import { createInterface } from 'readline'
-import { Task } from 'fp-ts/lib/Task'
+// import { createInterface } from 'readline'
+// import { Task } from 'fp-ts/lib/Task'
+// import { resolve } from 'path';
+import { exit } from 'process';
 
 type ItemStatus =  'noDot' | 'dotted' | 'done';
 
@@ -23,7 +25,7 @@ type IItem = {
 	//hiddenOn: Date
 }
 
-// type AppState = 'menu' | 'viewing' | 'marking' | 'doing' | 'adding';
+type AppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 'read-about';
 
 // const makeChoice = (x: AppState[]) => 'viewing'; // TODO: implement this stub
 
@@ -62,7 +64,7 @@ const completeItem = (i: IItem): IItem =>
 const statusToMark = (x: ItemStatus): string =>
 	`${x}`
 
-const prettyPrint = (i: IItem): string =>
+const prettyPrintItem = (i: IItem): string =>
 	`[${marks[i.status]}] ${i.textName}`
 
 const demoList: string[] = ['make coffee',
@@ -72,7 +74,7 @@ const populateDemoList = (): IItem[] =>
 	demoList.map(x => newItem(x))
 
 const stringifyList = (xs: IItem[]): string[] =>
-	xs.map(x => prettyPrint(x)) // stringifyVerbose(x)
+	xs.map(x => prettyPrintItem(x)) // stringifyVerbose(x)
 
 const printList = (xs: string[]): void =>
 	xs.forEach(x => console.log(x));
@@ -96,45 +98,114 @@ const rl = readline.createInterface({
   output: process.stdout
 })
 
-// source: Petri Kola @pe3 Feb 15 2018 05:56
-// https://gitter.im/fluture-js/Fluture?at=5a85605f5cc187264540d644
-// const ask = (question: any) => Future ((rej: any, res: any) => {
-//   rl.question (question + ' ', res)
-// })
+const getName = () => {
+	return new Promise<string>((resolve) => {
+		rl.question("hi, what's your name?", (name: string) => { resolve(name)})
+	})
+}
 
-// Future.do(function*(){
-// 	const firstName = yield ask('What is your first name?')
-// 	const familyName = yield ask('What is your family name?')
-// 	return 'Hello' + firstName + ' ' + familyName + '!'
-// })
-// .fork(console.error, console.log);
+const askOpenEnded = (q: string) => {
+	return new Promise<string>((resolve) => {
+		rl.question(q, (answer: string) => { resolve(answer)})
+	})
+}
 
-const getName = (): Promise<string> =>
-	rl.question("hi, what's your name?");
-		// .then((x: any) => "banana")
-		// .catch((e: Error) => "cheese")
+const askOptional = (q: string) => {
+	return new Promise<string>((resolve) => {
+		rl.question(q, (answer: string) => { 
+			answer.toLowerCase() !== 'q' ?
+			resolve(answer) :
+			resolve('q')
+		})
+	})
+}
 
-const main = async () => {
+const possibleStates: any = {
+	'menu': ['see', 'add', 'mark', 'do', 'read-about'],
+	'see': ['menu'],
+	'add': ['menu'],
+	'mark': ['menu'],
+	'do': ['menu'],
+	'read-about': ['menu']
+}
+
+const menuTexts: any = {
+	// 'menu':'',
+	'see':'Print List', // TODO: make list visible at all times for command line app
+	'add':'Add New To-Do',
+	'mark':'Review List',
+	'do':'Focus on To-Do',
+	'read-about':'Read About AutoFocus'
+};
+
+const menuList: AppState[] = ['see', 'add', 'mark', 'do', 'read-about'];
+
+const printMenuItem = (x: AppState) => (i: number) =>
+	console.log(`${i+1}: ${x}`)
+
+const printMenu = (menuList: AppState[]) => (menuTexts: any) => {
+	console.log('MAIN MENU');
+	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItem(x)(i));
+}
+
+const existsInArr = (arr: any) => (target: any) =>
+	arr.indexOf(target) !== -1;
+
+const transitionalble = (current: AppState) => (next: AppState) => (states: any) =>
+	existsInArr(Object.keys(states))(current) && existsInArr(possibleStates[current])(next)
+
+const changeState = (current: AppState) => (next: AppState) =>
+	transitionalble(current)(next) ? next : current;
+
+const doIOtest = async () => {
+	const myName = await getName();
+	console.log(`Hi ${myName}!`);
+
+	const myAnswer = await askOpenEnded("How are you feeling right now?");
+	console.log(`Oh, I see you are feeling ${myAnswer}.`);
+}
+
+const doIOtest2 = async () => {
+	const myAnswer = await askOptional("Can you tell me what your name is?");
+	myAnswer.toLowerCase() !== 'q' ?
+		console.log(`Oh, your name is ${myAnswer}.`) :
+		console.log('Hmm, I see you don\'t want to answer now.');
+}
+
+const sayState = (state: AppState): void =>
+	console.log(`Current state is now: '${state}'.`);
+
+const doStateTest = (): void => {
+	let currentState: AppState = 'menu';
+	sayState(currentState);
+	currentState = changeState(currentState)('add');
+	console.log(`Atttempting to change state...`)
+	sayState(currentState);
+}
+
+const printBlankLine = (): void =>
+	console.log();
+
+// const main = async () => {
+const main = () => {
 	greet();
+	printBlankLine();
 
 	// let myList: IItem[] = []; // initialize empty list
 	let myList: IItem[] = populateDemoList();
 	// let lastDone: string = '';
 	// let currentState: AppState = 'menu';
 
+	console.log('AUTOFOCUS LIST')
 	printList(stringifyList(myList));
 
-	// printAnswer("hello");
-	// sampleQuestion('What is your name?'); // BUG: this does not get called, it seems
+	printBlankLine();
+	// await doIOtest();
+	// doStateTest();
+	// await doIOtest2();
+	printMenu(menuList)(menuTexts);
 
-	// await ask("What is your name?");
-	// .then((x: any) => console.log(x))
-	// .catch((e: any) => console.error(e));
-	getName().then(
-		(x: any) => console.log(`Hey ${x}`)
-	).catch(
-		(e: Error) => console.error(e)
-	)
+	exit(0);
 }
 
 main();
