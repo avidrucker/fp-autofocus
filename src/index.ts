@@ -1,6 +1,5 @@
 const readline = require('readline')
-const Future = require('fluture')
-
+// const Future = require('fluture')
 // const fs = require('fs');
 // import { createInterface } from 'readline'
 // import { Task } from 'fp-ts/lib/Task'
@@ -15,7 +14,7 @@ const marks = {
 	complete: 'x'
 };
 
-type IItem = {
+export type IItem = {
 	index: number,
 	status: ItemStatus,
 	textName: string,
@@ -26,24 +25,27 @@ type IItem = {
 	//hiddenOn: Date
 }
 
-interface IAppData {
+export interface IAppData {
 	currentState: TAppState,
 	myList: IItem[],
 	lastDone: number
 }
 
-type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 'read-about' | 'quit';
+export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 'read-about' | 'quit';
 
 const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T) => {
 	arr.push(newItem);
+	console.log(`New item added successfully!`);
 	return arr;
 }
 
 const addItem = (arr: IItem[]) => (newItem: IItem) =>
-	pushToAndReturnArr(arr)(newItem);
+	(console.log(`Adding new item to list...`),
+	pushToAndReturnArr(arr)(newItem));
 
 const createNewItem = (s: string) => (nextIndex: number): IItem =>
-	({index: nextIndex, status: 'unmarked', textName: s}); // isHidden: false
+	(console.log(`New item '${s}' successfully created`),
+	{index: nextIndex, status: 'unmarked', textName: s}); // isHidden: false
 
 // a kind of pretty print
 const stringifyVerbose = (i: IItem): string =>
@@ -65,56 +67,76 @@ const stringifyConcise = (i: IItem): string =>
 const demoList: string[] = ['make coffee',
 	'go for jog', 'watch The Incredibles'];
 
-const populateDemoList = (arr: IItem[]): IItem[] =>
+export const populateDemoList = (arr: IItem[]): IItem[] =>
 	demoList.map(x => createNewItem(x)(arr.length))
 
-const stringifyList = (xs: IItem[]): string[] =>
+export const stringifyList = (xs: IItem[]): string[] =>
 	xs.map(x => stringifyConcise(x)) // stringifyVerbose(x)
 
 const isEmptyArr = <T>(arr: T[]): boolean =>
 	arr.length === 0;
 
-const printList = (xs: string[]): void =>
+export const printList = (xs: string[]): void =>
 	xs.forEach(x => console.log(x));
 
-const printEmptyList = () =>
+export const printEmptyList = () =>
 	console.log("There are no items in your to-do list.");
 
-const printListOrStatus = (xs: string[]): void =>
+export const printListOrStatus = (xs: string[]): void =>
 	isEmptyArr(xs) ? printEmptyList() : printList(xs);
 
+export const createGreeting = (greeting: string) => (appName: string): string =>
+	`${greeting} ${appName}`;
+
+export const isPluralFromCount = (count: number): boolean =>
+	count === 1 ? false : true;
+
+export const getPluralS = (isPlural: boolean): string =>
+	isPlural ? 's' : '';
+
+const pluralizeIfNotZero = (s: string) => (count: number) =>
+	`${s}${getPluralS(isPluralFromCount(count))}`
+
+export const notEmptyString = (s: string): boolean =>
+	s === "" ? false : true;
+
+export const isNegOne = (n: number): boolean =>
+	n === -1;
+
+const isNeg = (n: number): boolean =>
+	n < 0;
+
+export const getPositiveMin = (x: number) => (y: number): number =>
+  isNeg(x) && isNeg(y)
+    ? -1
+    : !isNeg(x) && isNeg(y)
+			? x
+			: isNeg(x) && !isNeg(y)
+				? y
+				: Math.min(x, y);
+
 const greet = (): void =>
-	console.log('Welcome to FP AutoFocus!');
-
-// const menuChoices: string[] = ['View To-Do\'s',
-// 	'Add New To-Do', 'Review & Dot To-Do\'s',
-// 	'Focus on To-Do', 'Quit Program']; // 'Read About AutoFocus'
-
-// TODO: add Future here to get user IO for menu answer input (number 1 - 7, no enter needed)
-// TODO: add Future here to get user IO for new todo input (any text or "Q" to quit, enter to submit)
-
-const printAnswer = (s: string): void => {
-	console.log(`Thank you, you said: ${s}`);
-}
+	console.log(createGreeting('Welcome to')('FP AutoFocus!'));
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 })
 
-const getName = () => {
+export const getName = () => {
 	return new Promise<string>((resolve) => {
 		rl.question("hi, what's your name?", (name: string) => { resolve(name)})
 	})
 }
 
-const askOpenEnded = (q: string) => {
+export const askOpenEnded = (q: string) => {
 	return new Promise<string>((resolve) => {
 		rl.question(q, (answer: string) => { resolve(answer)})
 	})
 }
 
-const askOptional = (q: string) => {
+// TODO: refactor with fluture
+export const askOptional = (q: string) => {
 	return new Promise<string>((resolve) => {
 		rl.question(q, (answer: string) => { 
 			answer.toLowerCase() === 'q'
@@ -143,7 +165,7 @@ interface IOneToManyMap<T> {
 }
 
 // Map<TAppState, TAppState[]>
-const possibleStates: IOneToManyMap<TAppState> = {
+export const possibleStates: IOneToManyMap<TAppState> = {
 	'menu': ['see', 'add', 'mark', 'do', 'read-about'],
 	'see': ['menu'],
 	'add': ['menu'],
@@ -153,76 +175,45 @@ const possibleStates: IOneToManyMap<TAppState> = {
 	'quit': []
 }
 
-const menuTexts: any = {
-	'see':'Print List', // TODO: make list visible at all times for command line app
+export const menuTexts: any = {
+	'see':'View List', // TODO: make list visible at all times for command line app
 	'add':'Add New To-Do',
-	'mark':'Review List',
+	'mark':'Review & Dot List',
 	'do':'Focus on To-Do',
 	'read-about':'Read About AutoFocus',
 	'quit': 'Exit Program'
 };
 
-const menuList: TAppState[] = ['see', 'add', 'mark', 'do', 'read-about', 'quit'];
+export const menuList: TAppState[] = ['see', 'add', 'mark', 'do', 'read-about', 'quit'];
 
 const printMenuItem = (x: TAppState) => (i: number) =>
 	console.log(`${i+1}: ${x}`)
 
-const printMenu = (menuList: TAppState[]) => (menuTexts: any): number => {
+export const printMenu = (menuList: TAppState[]) => (menuTexts: any): number => {
+	console.log(`----------`);
 	console.log('MAIN MENU');
-	console.log(`----------`);
 	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItem(x)(i));
-	console.log(`----------`);
+	// console.log(`----------`);
 	return 0;
 }
 
 const existsInArr = (arr: any) => (target: any) =>
-	arr.indexOf(target) !== -1;
+	!isNegOne(arr.indexOf(target));
 
 const transitionalble = (current: TAppState) => (next: TAppState) => (states: any) =>
 	existsInArr(Object.keys(states))(current) && existsInArr(possibleStates[current])(next)
 
-const changeState = (current: TAppState) => (next: TAppState) =>
+export const changeState = (current: TAppState) => (next: TAppState) =>
 	transitionalble(current)(next) ? next : current;
 
-const doIOtest = async () => {
-	const myName = await getName();
-	console.log(`Hi ${myName}!`);
-
-	const myAnswer = await askOpenEnded("How are you feeling right now?");
-	console.log(`Oh, I see you are feeling ${myAnswer}.`);
-}
-
-const doIOtest2 = async () => {
-	const myAnswer = await askOptional("Can you tell me what your name is? ('q' to quit)");
-	myAnswer.toLowerCase() !== 'q' ?
-		console.log(`Oh, your name is ${myAnswer}.`) :
-		console.log('Hmm, I see you don\'t want to answer now.');
-}
-
-const sayState = (state: TAppState): void =>
+export const sayState = (state: TAppState): void =>
 	console.log(`Current state is now: '${state}'.`);
-
-const doStateTest = (): void => {
-	let currentState: TAppState = 'menu';
-	sayState(currentState);
-	currentState = changeState(currentState)('add');
-	console.log(`Atttempting to change state...`)
-	sayState(currentState);
-}
-
-// TODO: what about empty array error handling?
-// const getHead = <T>(arr: T[]) =>
-// 	arr[0];
-
-// // TODO: what about empty array error handling?
-// const getTail = <T>(arr: T[]) =>
-// 	arr[arr.length - 1];
 
 const inRangeInclusive = (lower: number) => (upper: number) => (x: number) =>
 	x >= lower && x <= upper
 
 // queries user for a number between `first` and `last` (inclusive)
-const getNumberFromUser = (first: number) => (last: number) => {
+export const getNumberFromUser = (first: number) => (last: number) => {
 	return new Promise<number>((resolve) => {
 		rl.question(`Please choose a number from ${first} to ${last}: `, (num: string) => {
 			inRangeInclusive(first)(last)(Number(num))
@@ -232,15 +223,10 @@ const getNumberFromUser = (first: number) => (last: number) => {
 	})
 };
 
-const printBlankLine = (): void =>
+export const printBlankLine = (): void =>
 	console.log();
 
-const doNumInRangeTest = async () => {
-	const myNum = await getNumberFromUser(1)(5);
-	console.log(`My number is ${myNum}`);
-}
-
-const promptUserAtMenuToChangeState = async (s: TAppState) =>
+export const promptUserAtMenuToChangeState = async (s: TAppState) =>
 	changeState(s)(menuList[await promptUserForMenuOption(menuList)]);
 
 const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> => {
@@ -249,23 +235,11 @@ const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =
 	return await getNumberFromUser(1)(menuList.length) - 1;
 }
 
-const doMenuStateChangeViaInputTest = async () => {
-	let currentState: TAppState = 'menu';
-	currentState = await promptUserAtMenuToChangeState(currentState);
-	sayState(currentState);
-}
-
-const createAndAddNewItemViaPrompt = async (arr: IItem[]): Promise<IItem[]> =>
-	addItem(arr)(createNewItem(await askOpenEnded(`Please enter a to-do item: `))(arr.length));
-
-const doNewItemInputTest = async () => {
-	let myList: IItem[] = [];
-	myList = populateDemoList(myList);
-	myList = await createAndAddNewItemViaPrompt(myList);
-	console.log('AUTOFOCUS LIST')
-	printList(stringifyList(myList));
-	printBlankLine();
-}
+// TODO: implement with askOptional to cancel to-do input
+export const createAndAddNewItemViaPrompt = async (arr: IItem[]): Promise<IItem[]> =>
+	addItem(arr)(createNewItem(
+		await askOpenEnded(`Please enter a to-do item: `)
+		)(arr.length));
 
 const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "dotted")
@@ -279,26 +253,25 @@ const filterOnUnmarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "unmarked")
 
 const hasUnmarked = (arr: IItem[]): boolean =>
-	filterOnUnmarked(arr).length !== 0;
+	isPositive(filterOnUnmarked(arr).length);
 
 const getLastIndexOf = (arr: IItem[]) => (s: ItemStatus): number =>
 	arr.map(x => x.status).lastIndexOf(s);
 
-const listHasUnmarkedAfterLastDone = (arr: IItem[]) => (lastDone: number) =>
-	getLastIndexOf(arr)("unmarked") > lastDone
+// typically after index of lastDone but could be CMWTD index also
+const listHasUnmarkedAfterIndex = (arr: IItem[]) => (i: number) =>
+	getLastIndexOf(arr)("unmarked") > i;
 
 const hasMarked = (arr: IItem[]): boolean =>
-	countMarked(arr) > 0
+	isPositive(countMarked(arr))
 
 // TODO: transfer unit tests for this from old autofocus
 const isMarkableList = (arr: IItem[]) => (lastDone: number): boolean =>
 	isEmptyArr(arr) // array must have items in it
 		? false
-		: countUnmarked(arr) === 0 // there must be at least 1 unmarked to mark things
-			? false
-			: countMarked(arr) > 0 // there may not be any marked items already
+			: hasMarked(arr) // there may not be any marked items already
 				? false
-				: listHasUnmarkedAfterLastDone(arr)(lastDone) // there must be unmarked items AFTER last done
+				: hasUnmarked(arr) && listHasUnmarkedAfterIndex(arr)(lastDone) // there must be unmarked items AFTER last done
 					? true
 					: false;
 
@@ -316,22 +289,28 @@ const mapUnmarkedToIndexAndFilter = (arr: IItem[]): number[] =>
 	arr.filter(x => x.status === "unmarked").map(x => x.index)
 
 // eg: lastDone is 1, unmarked are [2, 3], we want to return 2
-const getFirstUnmarkedAfterLastDone = (arr: IItem[]) => (lastDone: number): number =>
-	mapUnmarkedToIndexAndFilter(arr).filter(x => x > lastDone)[0];
+const getFirstUnmarkedAfterIndex = (arr: IItem[]) => (i: number): number =>
+	mapUnmarkedToIndexAndFilter(arr).filter(x => x > i)[0];
 
 // dotIndex(arr)(0)
 const	findFirstMarkable = (arr: IItem[]) => (lastDone: number): number => {
-	return arr.length === 0
+	return isEmptyArr(arr)
 		? -1
-		: hasUnmarked(arr) && listHasUnmarkedAfterLastDone(arr)(lastDone)
-			? getFirstUnmarkedAfterLastDone(arr)(lastDone)
+		: hasUnmarked(arr) && listHasUnmarkedAfterIndex(arr)(lastDone)
+			? getFirstUnmarkedAfterIndex(arr)(lastDone)
 			: -1;
 }
 
-const markFirstMarkableIfPossible = (arr: IItem[]) => (lastDone: number): IItem[] => {
+export const markFirstMarkableIfPossible = (arr: IItem[]) => (lastDone: number): IItem[] => {
 	return isMarkableList(arr)(lastDone)
-		? dotIndex(arr)(findFirstMarkable(arr)(lastDone))
-		: arr;
+		? (
+				console.log(`Auto-marking first markable item...`),
+				dotIndex(arr)(findFirstMarkable(arr)(lastDone))
+			)
+		: (
+				console.log(`Unable to auto-mark. Returning list as is...`),
+				arr
+		);
 }
 
 const boolToTFstring = (b: boolean): string =>
@@ -343,45 +322,42 @@ const printIsMarkableList = (arr: IItem[]) => (lastDone: number): void =>
 const printMarkedCount = (arr: IItem[]): void =>
 	console.log(`The # of marked items is now ${countMarked(arr)}`)
 
-const printStatsBlock = (arr: IItem[]) => (lastDone: number) => {
+export const printStatsBlock = (arr: IItem[]) => (lastDone: number) => {
 	printIsMarkableList(arr)(lastDone);
 	printCMWTDdata(arr);
 	printMarkedCount(arr)
 }
 
+const isPositive = (n: number): boolean =>
+	n > 0;
+
 // TODO: Implement stub
 // 1. marked items exist
 // 2. there are unmarked items that exist after the last marked item
 const isReviewableList = (arr: IItem[]) => (lastDone: number): boolean =>
-	false;
+	hasMarked(arr) && (
+		(!isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(lastDone))
+		|| (isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
+	);
+
+const getFirstReviewableIndex = (arr: IItem[]) => (lastDone: number): number =>
+	isEmptyArr(arr)
+	? -1
+	: isNegOne(getCMWTDindex(arr))
+		? -1
+		: isNeg(lastDone)
+			? getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr))
+			: getFirstUnmarkedAfterIndex(arr)(lastDone);
 
 const generateWhichQuestion = (current: string) => (cmwtd: string) =>
 	`Which do want to do '${current}' more than '${cmwtd}'?`;
 
-const doAutoMarkingTest = () => {
-	let myList: IItem[] = [];
-	let lastDone: number = -1;
-	myList = populateDemoList(myList);
 
-	printBlankLine();
-	printListOrStatus(stringifyList(myList));
-	printBlankLine();
-	printStatsBlock(myList)(lastDone);
-	printBlankLine();
-
-	myList = markFirstMarkableIfPossible(myList)(lastDone);
-
-	console.log('AUTOFOCUS LIST TEST')
-	printListOrStatus(stringifyList(myList));
-	printBlankLine();
-	printStatsBlock(myList)(lastDone);
-	printBlankLine();
-}
 
 const getCMWTDstring = (arr: IItem[]): string =>
-	getCMWTDindex(arr) !== -1
-	? arr[getCMWTDindex(arr)].textName
-	: "undefined";
+	!isNegOne(getCMWTDindex(arr))
+		? arr[getCMWTDindex(arr)].textName
+		: "undefined";
 
 // returns -1 if there is no CMWTD
 const getCMWTDindex = (arr: IItem[]): number =>
@@ -392,28 +368,9 @@ const getCMWTDindex = (arr: IItem[]): number =>
 			: -1
 
 const printCMWTDdata = (arr: IItem[]): void =>
-	getCMWTDindex(arr) === -1
+	isNegOne(getCMWTDindex(arr))
 		? console.log(`CMWTD is not yet set!`)
 		: console.log(`CMWTD is, at index ${getCMWTDindex(arr)}: '${getCMWTDstring(arr)}'`)
-
-const runAdhocTests = async () => {
-	// let myList: IItem[] = []; // initialize empty list
-	// myList = populateDemoList(myList);
-	// let lastDone: number = -1; // originally a string
-	// let currentState: TAppState = 'menu';
-
-	await doIOtest(); // TEST: uncomment this line, and add 'async' just after 'const main ='
-	doStateTest(); // TEST: uncomment this line
-	await doIOtest2(); // TEST: uncomment this line, and add 'async' just after 'const main ='
-	
-	printMenu(menuList)(menuTexts); // TODO: print menu conditionally depending on current app state
-
-	doAutoMarkingTest();
-	
-	await doNumInRangeTest();
-	await doMenuStateChangeViaInputTest();
-	await doNewItemInputTest();
-}
 
 // TODO: implement wrapper higher order function
 // const wrapPrintWithLines = (f: () => void) => {
@@ -426,10 +383,10 @@ const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu', myList: appData.myList, lastDone: appData.lastDone }); // TODO: remove temp placeholder
 
 const resolveSeeState = (arr: IItem[]): number => {
+	console.log(`----------`);
 	console.log('AUTOFOCUS LIST')
-	console.log(`----------`);
 	printListOrStatus(stringifyList(arr));
-	console.log(`----------`);
+	//console.log(`----------`);
 	return 0;
 }
 
@@ -439,16 +396,27 @@ const resolveQuitState = (appData: IAppData): IAppData => {
 }
 
 // should only return IItem[], should only take arr, lastDone
-const resolveAddState = (appData: IAppData): IAppData => {
-	console.log(`Stub here to add new items...`); // TODO: implement stub
-	return returnAppDataBackToMenu(appData);
-}
+const resolveAddState = async (appData: IAppData): Promise<IAppData> =>
+	returnAppDataBackToMenu({currentState: appData.currentState,
+		myList: await createAndAddNewItemViaPrompt(appData.myList),
+		lastDone: appData.lastDone});
+
+const reviewIfPossible = (arr: IItem[]) => (lastDone: number): IItem[] =>
+	isReviewableList(arr)(lastDone)
+		? (console.log(`Commencing review from index ${getFirstReviewableIndex(arr)(lastDone)}...`), arr)
+		: (console.log(`Skipping review (list is not reviewable)...`), arr);
+
+const getNonReviewableSegment = (arr: IItem[]) => (i: number) =>
+		arr.slice(0, i);
+
+const getReviewableSegment = (arr: IItem[]) => (i: number) =>
+	arr.slice(i)
 
 // should only return IItem[], should only take arr, lastDone
-const resolveMarkState = (appData: IAppData): IAppData => {
-	console.log(`Stub here to review & mark items...`); // TODO: implement stub
-	return returnAppDataBackToMenu(appData);
-}
+const resolveMarkState = (appData: IAppData): IAppData =>
+	returnAppDataBackToMenu({currentState: appData.currentState,
+		myList: reviewIfPossible(markFirstMarkableIfPossible(appData.myList)(appData.lastDone))(appData.lastDone),
+		lastDone: appData.lastDone});
 
 // should only return IItem[] and lastDone
 const resolveDoState = (appData: IAppData): IAppData => {
@@ -502,7 +470,7 @@ const mutatorStates: TAppState[] = ['menu', 'add', 'mark', 'do'];
 
 // s === state, mss === mutator states
 const stateIsMutator = (s: TAppState) => (mss: TAppState[]) =>
-	mss.indexOf(s) !== -1;
+	!isNegOne(mss.indexOf(s));
 
 // TODO: evalute efficacy/necessity of this wrapper function
 const wrapNonMutatingStateEntry = (appData: IAppData): IAppData =>
@@ -510,10 +478,8 @@ const wrapNonMutatingStateEntry = (appData: IAppData): IAppData =>
 	? returnAppDataBackToMenu(appData)
 	: returnAppDataBackToMenu(appData)
 
-// appData.currentState, appData.myList, appData.lastDone
-// (state: TAppState) => (arr: IItem[]) => async (lastDone: number)
 const enterMenu = async (appData: IAppData): Promise<IAppData> => {
-	sayState(appData.currentState);
+	// sayState(appData.currentState);
 	return appData.currentState === 'quit'
 		? resolveQuitState(appData)
 		: enterMenu(
@@ -526,7 +492,7 @@ const runProgram = (running: boolean) => async (appData: IAppData): Promise<IApp
 	running === false ? appData : await enterMenu(appData) // display menu choices
 
 
-const main = async () => {
+export const main = async () => {
 	// TODO: implement command line (console) clear()
 	greet();
 	await runProgram(true)({ currentState: 'menu', myList: [], lastDone: -1 }); // await runAdhocTests();
