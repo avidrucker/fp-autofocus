@@ -2,14 +2,12 @@
   "name": "fp-autofocus",
   "version": "1.0.0",
   "main": "index.js",
-  "dependencies": {
-    "@types/node": "^14.0.6",
-    "fluture": "^12.3.1",
-    "fp-ts": "^2.6.6"
-  },
+  "dependencies": {},
   "scripts": {
     "start": "ts-node src/index.ts",
-    "build": "tsc && node src/index.js"
+		"start2": "tsc && node src/index.js",
+		"build": "tsc",
+		"test": "mocha tests/index.test.js --exit"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +15,11 @@
   "description": "",
   "devDependencies": {
     "ts-node": "^8.10.2",
-    "typescript": "^3.9.3"
+		"typescript": "^3.9.3",
+		"@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^14.0.6",
+    "chai": "^4.2.0",
+    "mocha": "^8.0.1"
   }
 }
