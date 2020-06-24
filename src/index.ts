@@ -35,16 +35,16 @@ export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 'read-about' | 
 
 const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T) => {
 	arr.push(newItem);
-	console.log(`New item added successfully!`);
+	// console.log(`New item added successfully!`);
 	return arr;
 }
 
 const addItem = (arr: IItem[]) => (newItem: IItem) =>
-	(console.log(`Adding new item to list...`),
+	(console.log(`Adding new item '${newItem.textName}' to list...`),
 	pushToAndReturnArr(arr)(newItem));
 
 const createNewItem = (s: string) => (nextIndex: number): IItem =>
-	(console.log(`New item '${s}' successfully created`),
+	(//console.log(`New item '${s}' successfully created`),
 	{index: nextIndex, status: 'unmarked', textName: s}); // isHidden: false
 
 // a kind of pretty print
@@ -249,6 +249,12 @@ const dotIndex = (arr: IItem[]) => (i: number): IItem[] => {
 	return arr;
 }
 
+// arr === item list, i === index
+const markComplete = (arr: IItem[]) => (i: number): IItem[] => {
+	arr[i].status = 'complete';
+	return arr;
+}
+
 const filterOnUnmarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "unmarked")
 
@@ -369,7 +375,7 @@ const getCMWTDindex = (arr: IItem[]): number =>
 
 const printCMWTDdata = (arr: IItem[]): void =>
 	isNegOne(getCMWTDindex(arr))
-		? console.log(`CMWTD is not yet set!`)
+		? console.log(`CMWTD is not set yet.`)
 		: console.log(`CMWTD is, at index ${getCMWTDindex(arr)}: '${getCMWTDstring(arr)}'`)
 
 // TODO: implement wrapper higher order function
@@ -418,11 +424,44 @@ const resolveMarkState = (appData: IAppData): IAppData =>
 		myList: reviewIfPossible(markFirstMarkableIfPossible(appData.myList)(appData.lastDone))(appData.lastDone),
 		lastDone: appData.lastDone});
 
+const isFocusableList = (appData: IAppData): boolean =>
+	!isNegOne(getCMWTDindex(appData.myList))
+
+const promptUserForAnyKey = async () =>
+	askOpenEnded('Once you have finished focusing on this task, tap the enter key.');
+
+const markCMWTDindexComplete = (appData: IAppData): IItem[] =>
+	markComplete(appData.myList)(getCMWTDindex(appData.myList))
+
+const displayCMWTDandWaitForUser = async (appData: IAppData): Promise<IAppData> =>
+	(await promptUserForAnyKey(),
+	// TODO: implement "do you have work remaining on this task? (y/n)"
+	//   follow-up question to quick-create a new item
+	returnAppDataBackToMenu(
+		{currentState: 'menu',
+		myList: markCMWTDindexComplete(appData),
+		lastDone: getCMWTDindex(appData.myList)}
+		)
+	);
+
+
+const enterFocusState = async (appData: IAppData): Promise<IAppData> =>
+	displayCMWTDandWaitForUser(appData);
+
+// TODO: implement stub
 // should only return IItem[] and lastDone
-const resolveDoState = (appData: IAppData): IAppData => {
-	console.log(`This is a stub for Focus Mode...`); // TODO: implement stub
-	return returnAppDataBackToMenu(appData);
-}
+const resolveDoState = async (appData: IAppData): Promise<IAppData> =>
+	// console.log(`This is a stub for Focus Mode...`); 
+	isFocusableList(appData)
+		? (
+			console.clear(),
+			console.log(`Focusing on '${getCMWTDstring(appData.myList)}'...`),
+			enterFocusState(appData)
+		 )
+		: (
+			console.log(`Cannot focus at this time, mark an item first.`),
+			returnAppDataBackToMenu(appData)
+		);
 
 const resolveReadAboutState = (): number => {
 	console.log(`This is a stub for About AutoFocus...`); // TODO: implement stub
@@ -478,7 +517,15 @@ const wrapNonMutatingStateEntry = (appData: IAppData): IAppData =>
 	? returnAppDataBackToMenu(appData)
 	: returnAppDataBackToMenu(appData)
 
+const doNothing = () => {};
+
 const enterMenu = async (appData: IAppData): Promise<IAppData> => {
+	// uncomment ternary operator below to see verbose readouts
+	// appData.currentState !== 'menu'
+	// && appData.currentState !== 'add'
+	// && stateIsMutator(appData.currentState)(mutatorStates)
+	// 	? printStatsBlock(appData.myList)(appData.lastDone)
+	// 	: doNothing();
 	// sayState(appData.currentState);
 	return appData.currentState === 'quit'
 		? resolveQuitState(appData)
