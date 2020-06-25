@@ -52,7 +52,7 @@ const doIOtest = async () => {
 }
 	
 const doIOtest2 = async () => {
-	const myAnswer = await askOptional("Can you tell me what your name is? ('q' to quit)");
+	const myAnswer = await askOptionalIO("Can you tell me what your name is? ('q' to quit)");
 	myAnswer.toLowerCase() !== 'q' ?
 		console.log(`Oh, your name is ${myAnswer}.`) :
 		console.log('Hmm, I see you don\'t want to answer now.');
