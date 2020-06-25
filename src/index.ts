@@ -6,7 +6,7 @@ const readline = require('readline')
 // import { resolve } from 'path';
 import { exit } from 'process';
 
-type ItemStatus =  'unmarked' | 'dotted' | 'complete';
+export type TItemStatus =  'unmarked' | 'dotted' | 'complete';
 
 const marks = {
 	unmarked: ' ',
@@ -16,7 +16,7 @@ const marks = {
 
 export type IItem = {
 	index: number,
-	status: ItemStatus,
+	status: TItemStatus,
 	textName: string,
 	//isHidden: boolean
 	//created: Date,
@@ -39,11 +39,11 @@ const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T) => {
 	return arr;
 }
 
-const addItem = (arr: IItem[]) => (newItem: IItem) =>
-	(console.log(`Adding new item '${newItem.textName}' to list...`),
+export const addItem = (arr: IItem[]) => (newItem: IItem) =>
+	(//console.log(`Adding new item '${newItem.textName}' to list...`),
 	pushToAndReturnArr(arr)(newItem));
 
-const createNewItem = (s: string) => (nextIndex: number): IItem =>
+export const createNewItem = (s: string) => (nextIndex: number): IItem =>
 	(//console.log(`New item '${s}' successfully created`),
 	{index: nextIndex, status: 'unmarked', textName: s}); // isHidden: false
 
@@ -57,7 +57,7 @@ const dotItem = (i: IItem): IItem =>
 const completeItem = (i: IItem): IItem =>
 	({index: i.index, status: 'complete', textName: i.textName})
 
-const statusToMark = (x: ItemStatus): string =>
+export const statusToMark = (x: TItemStatus): string =>
 	`${marks[x]}`
 
 // another kind of pretty print
@@ -67,8 +67,10 @@ const stringifyConcise = (i: IItem): string =>
 const demoList: string[] = ['make coffee',
 	'go for jog', 'watch The Incredibles'];
 
+// fixed a pesky bug here where createNewItem took a static
+// demoList.length, rather than index i
 export const populateDemoList = (arr: IItem[]): IItem[] =>
-	demoList.map(x => createNewItem(x)(arr.length))
+	demoList.map((x, i) => createNewItem(x)(i))
 
 export const stringifyList = (xs: IItem[]): string[] =>
 	xs.map(x => stringifyConcise(x)) // stringifyVerbose(x)
@@ -155,7 +157,7 @@ const askOptionalYN = (q: string) => {
 					? resolve('y')
 					: answer.toLowerCase() === 'n'
 						? resolve('n')
-						: resolve(answer)
+						: resolve(askOptionalYN(q));
 		})
 	})
 }
@@ -244,13 +246,16 @@ export const createAndAddNewItemViaPrompt = async (arr: IItem[]): Promise<IItem[
 const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "dotted")
 
+// TODO: refactor to not mutate state, and instead return a newly constructed array of items
 const dotIndex = (arr: IItem[]) => (i: number): IItem[] => {
+	// console.log(`Modifying item at index ${i} to be dotted...`)
 	arr[i].status = 'dotted';
 	return arr;
 }
 
 // arr === item list, i === index
 const markComplete = (arr: IItem[]) => (i: number): IItem[] => {
+	// console.log(`Modifying item at index ${i} to be complete...`)
 	arr[i].status = 'complete';
 	return arr;
 }
@@ -261,7 +266,7 @@ const filterOnUnmarked = (arr: IItem[]) =>
 const hasUnmarked = (arr: IItem[]): boolean =>
 	isPositive(filterOnUnmarked(arr).length);
 
-const getLastIndexOf = (arr: IItem[]) => (s: ItemStatus): number =>
+const getLastIndexOf = (arr: IItem[]) => (s: TItemStatus): number =>
 	arr.map(x => x.status).lastIndexOf(s);
 
 // typically after index of lastDone but could be CMWTD index also
@@ -272,14 +277,17 @@ const hasMarked = (arr: IItem[]): boolean =>
 	isPositive(countMarked(arr))
 
 // TODO: transfer unit tests for this from old autofocus
+// TODO: fix bug, in that, this is not correct... yet
 const isMarkableList = (arr: IItem[]) => (lastDone: number): boolean =>
 	isEmptyArr(arr) // array must have items in it
 		? false
-			: hasMarked(arr) // there may not be any marked items already
-				? false
-				: hasUnmarked(arr) && listHasUnmarkedAfterIndex(arr)(lastDone) // there must be unmarked items AFTER last done
-					? true
-					: false;
+			: isNegOne(lastDone) && !hasMarked(arr) && hasUnmarked(arr) // there may not be any marked items already
+				? true
+				: isNegOne(lastDone) && hasMarked(arr)
+					? false
+					: !isNegOne(lastDone) && hasUnmarked(arr) && listHasUnmarkedAfterIndex(arr)(lastDone) // there must be unmarked items AFTER last done
+						? true
+						: false;
 
 // TODO: implement stub
 // const updateLastDone = (arr: IItem[]) => (lastDone: number) =>
@@ -291,33 +299,46 @@ const countUnmarked = (arr: IItem[]): number =>
 const countMarked = (arr: IItem[]): number =>
 	filterOnMarked(arr).length
 
-const mapUnmarkedToIndexAndFilter = (arr: IItem[]): number[] =>
+export const mapUnmarkedToIndexAndFilter = (arr: IItem[]): number[] =>
 	arr.filter(x => x.status === "unmarked").map(x => x.index)
 
 // eg: lastDone is 1, unmarked are [2, 3], we want to return 2
-const getFirstUnmarkedAfterIndex = (arr: IItem[]) => (i: number): number =>
-	mapUnmarkedToIndexAndFilter(arr).filter(x => x > i)[0];
+export const getFirstUnmarkedAfterIndex = (arr: IItem[]) => (i: number): number =>
+	arr.length < i + 1
+		? (//console.log(`Out of bounds error...`),
+			-1)
+		: arr.length === i + 1
+			? (//console.log(`Index is at the end of the array, returning not found...`),
+				-1)
+			: (//console.log(`   Getting first unmarked index after index ${i} where ARRAY LEN is ${arr.length}...`),
+				//console.log(`... it appears to be ${mapUnmarkedToIndexAndFilter(arr).filter(x => x > i)[0]}`),
+				mapUnmarkedToIndexAndFilter(arr).filter(x => x > i)[0]);
 
-// dotIndex(arr)(0)
-const	findFirstMarkable = (arr: IItem[]) => (lastDone: number): number => {
-	return isEmptyArr(arr)
-		? -1
-		: hasUnmarked(arr) && listHasUnmarkedAfterIndex(arr)(lastDone)
-			? getFirstUnmarkedAfterIndex(arr)(lastDone)
-			: -1;
-}
+// if there are marked items and no lastDone (-1) OR
+// lastDone is set (not -1) and there ar marked items after
+// return -1 (not auto-markable)
+export const findFirstMarkable = (arr: IItem[]) => (lastDone: number): number =>
+	isEmptyArr(arr) || !hasUnmarked(arr)
+		? (console.log(`Empty array or no unmarked items, no markable items found.`)
+			,-1) // empty lists and lists without unmarked items have no auto-markable items
+		: isNegOne(lastDone) && !hasMarked(arr)
+			? (console.log(`Auto-markable index FOUND at index zero.`),
+				0) // lists with only unmarked items can return the first item as auto-markable
+			: isNegOne(lastDone) && hasMarked(arr)
+				? (console.log(`List already marked and lastDone not set, leaving list as is...`),
+				-1) // already marked lists with no lastDone cannot be auto-marked further
+				: !isNegOne(lastDone) && !hasMarked(arr) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(lastDone))
+					? (console.log(`First markable FOUND after lastDone.`),
+						getFirstUnmarkedAfterIndex(arr)(lastDone))
+					: (console.log(`First markable not found...`),
+						-1);
 
-export const markFirstMarkableIfPossible = (arr: IItem[]) => (lastDone: number): IItem[] => {
-	return isMarkableList(arr)(lastDone)
-		? (
-				console.log(`Auto-marking first markable item...`),
-				dotIndex(arr)(findFirstMarkable(arr)(lastDone))
-			)
-		: (
-				console.log(`Unable to auto-mark. Returning list as is...`),
-				arr
-		);
-}
+export const markFirstMarkableIfPossible = (arr: IItem[]) => (lastDone: number): IItem[] =>
+	isMarkableList(arr)(lastDone)
+		? (console.log(`Auto-marking first markable item...`),
+			dotIndex(arr)(findFirstMarkable(arr)(lastDone)))
+		: (console.log(`Unable to auto-mark. Returning list as is...`),
+			arr);
 
 const boolToTFstring = (b: boolean): string =>
 	b ? 'TRUE' : 'FALSE';
@@ -337,36 +358,47 @@ export const printStatsBlock = (arr: IItem[]) => (lastDone: number) => {
 const isPositive = (n: number): boolean =>
 	n > 0;
 
-// TODO: Implement stub
-// 1. marked items exist
-// 2. there are unmarked items that exist after the last marked item
-const isReviewableList = (arr: IItem[]) => (lastDone: number): boolean =>
+// a. there is at least one marked item
+// b. there is at least one unmarked item after the last marked item
+export const isReviewableList = (arr: IItem[]) => (lastDone: number): boolean =>
 	hasMarked(arr) && (
-		(!isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(lastDone))
-		|| (isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
-	);
+		(//console.log(`... lastDone is undefined, and there ARE unmarked after CMWTD.`),
+			isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
+		|| (//console.log(`... lastDone IS defined, and there ARE unmarked after CMWTD *and* lastDone.`),
+			!isNegOne(lastDone) && (listHasUnmarkedAfterIndex(arr)(lastDone) && listHasUnmarkedAfterIndex(arr)(getCMWTDindex(arr))))
+		|| (//console.log(`... lastDone IS defined, and there ARE unmarked after CMWTD *but NOT* after lastDone`),
+			!isNegOne(lastDone) && (!listHasUnmarkedAfterIndex(arr)(lastDone) && listHasUnmarkedAfterIndex(arr)(getCMWTDindex(arr))))
+		);
 
-const getFirstReviewableIndex = (arr: IItem[]) => (lastDone: number): number =>
+export const getFirstReviewableIndex = (arr: IItem[]) => (lastDone: number): number =>
 	isEmptyArr(arr)
-	? -1
+	? (//console.log(`Empty array, not reviewable...`),
+		-1) // empty lists have no reviewable indecies
 	: isNegOne(getCMWTDindex(arr))
-		? -1
-		: isNeg(lastDone)
-			? getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr))
-			: getFirstUnmarkedAfterIndex(arr)(lastDone);
+		? (//console.log(`No CMWTD found, not reviewable...`),
+			-1) // lists without a cmwtd cannot be reviewed
+		: isNeg(lastDone) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
+			? getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr)) // returns first unmarked after last marked
+			: !isNeg(lastDone) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(lastDone))
+				? getFirstUnmarkedAfterIndex(arr)(lastDone)
+				: !isNeg(lastDone) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
+					? (//console.log(`Resolves very unusual case "[o] [ ] [x] ready for review" ...`),
+						getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr))) // returns first unmarked after last marked
+					: (//console.log(`First reviewable index not found...`),
+					-1);
 
 const generateWhichQuestion = (current: string) => (cmwtd: string) =>
 	`Which do want to do '${current}' more than '${cmwtd}'?`;
 
 
 
-const getCMWTDstring = (arr: IItem[]): string =>
+export const getCMWTDstring = (arr: IItem[]): string =>
 	!isNegOne(getCMWTDindex(arr))
 		? arr[getCMWTDindex(arr)].textName
 		: "undefined";
 
 // returns -1 if there is no CMWTD
-const getCMWTDindex = (arr: IItem[]): number =>
+export const getCMWTDindex = (arr: IItem[]): number =>
 	isEmptyArr(arr)
 		? -1
 		: hasMarked(arr)
@@ -407,10 +439,55 @@ const resolveAddState = async (appData: IAppData): Promise<IAppData> =>
 		myList: await createAndAddNewItemViaPrompt(appData.myList),
 		lastDone: appData.lastDone});
 
-const reviewIfPossible = (arr: IItem[]) => (lastDone: number): IItem[] =>
+const getTextByIndex = (arr: IItem[]) => (i: number): string =>
+	(//console.log(`Accessing index ${i} of array of length ${arr.length}...`),
+		arr[i].textName);
+
+const deepCopy = <T>(x: T): T =>
+	JSON.parse(JSON.stringify(x));
+
+// s === string label
+const printListData = (arr: IItem[]) => (s: string): void => {
+	console.log()
+	console.log(`${s}`)
+	console.log(arr);
+	console.log()
+}
+
+const commenceReview = (arr: IItem[]) => async (lastDone: number): Promise<IItem[]> => {
+	let reviewing = true;
+	let currentIndex = getFirstReviewableIndex(arr)(lastDone);
+	let arrCopy = deepCopy(arr);
+	// printListData(arrCopy)('DUP ARRAY:'); // uncomment to see list state
+
+	// TODO: refactor to FP style, consider using trampoline method, see link:
+	// https://stackoverflow.com/questions/43592016/how-do-i-replace-while-loops-with-a-functional-programming-alternative-without-t
+	while(reviewing) {
+		arrCopy = await askOptionalYN(
+			generateWhichQuestion(
+				getTextByIndex(arrCopy)(currentIndex)
+				)(getCMWTDstring(arrCopy)))
+				.then(x => x.toLowerCase())
+				.then(x => x === 'q'
+					? (reviewing = false, arrCopy)
+					: x === 'y'
+						? dotIndex(arrCopy)(currentIndex)
+						: arrCopy)
+				.catch(e => console.log(`Error ${e} has occured...`))
+				.then(() => arr);
+		reviewing = reviewing === true && currentIndex !== arrCopy.length ? true : false;
+		currentIndex++;
+	}
+	return arrCopy;
+}
+	
+
+const reviewIfPossible = (arr: IItem[]) => async (lastDone: number): Promise<IItem[]> =>
 	isReviewableList(arr)(lastDone)
-		? (console.log(`Commencing review from index ${getFirstReviewableIndex(arr)(lastDone)}...`), arr)
-		: (console.log(`Skipping review (list is not reviewable)...`), arr);
+		? (//console.log(`Commencing review from index ${getFirstReviewableIndex(arr)(lastDone)}...`),
+			commenceReview(arr)(lastDone))
+		: (//console.log(`Skipping review (list is not reviewable)...`),
+			arr);
 
 const getNonReviewableSegment = (arr: IItem[]) => (i: number) =>
 		arr.slice(0, i);
@@ -419,9 +496,9 @@ const getReviewableSegment = (arr: IItem[]) => (i: number) =>
 	arr.slice(i)
 
 // should only return IItem[], should only take arr, lastDone
-const resolveMarkState = (appData: IAppData): IAppData =>
+const resolveMarkState = async (appData: IAppData): Promise<IAppData> =>
 	returnAppDataBackToMenu({currentState: appData.currentState,
-		myList: reviewIfPossible(markFirstMarkableIfPossible(appData.myList)(appData.lastDone))(appData.lastDone),
+		myList: await reviewIfPossible(markFirstMarkableIfPossible(appData.myList)(appData.lastDone))(appData.lastDone),
 		lastDone: appData.lastDone});
 
 const isFocusableList = (appData: IAppData): boolean =>
@@ -542,7 +619,8 @@ const runProgram = (running: boolean) => async (appData: IAppData): Promise<IApp
 export const main = async () => {
 	// TODO: implement command line (console) clear()
 	greet();
-	await runProgram(true)({ currentState: 'menu', myList: [], lastDone: -1 }); // await runAdhocTests();
+	// await runProgram(true)({ currentState: 'menu', myList: [], lastDone: -1 }); // await runAdhocTests();
+	await runProgram(true)({ currentState: 'menu', myList: populateDemoList([]), lastDone: -1 });
 	exit(0);
 }
 
