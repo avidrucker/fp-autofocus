@@ -1,6 +1,6 @@
 import { promptUserAtMenuToChangeState, getNumberFromUser, populateDemoList, 
 	sayState, createAndAddNewItemViaPrompt, IItem, TAppState, changeState, 
-	getName, askOpenEnded, printMenu, menuList, menuTexts, printListOrStatus, 
+	getNameIO, askOpenEndedIO, printMenu, menuList, menuTexts, printListOrStatus, 
 	printBlankLine, stringifyList, printStatsBlock, markFirstMarkableIfPossible, 
 	askOptional, printList } from ".";
 
@@ -44,10 +44,10 @@ const runAdhocTests = async () => {
 }
 
 const doIOtest = async () => {
-	const myName = await getName();
+	const myName = await getNameIO();
 	console.log(`Hi ${myName}!`);
 
-	const myAnswer = await askOpenEnded("How are you feeling right now?");
+	const myAnswer = await askOpenEndedIO("How are you feeling right now?");
 	console.log(`Oh, I see you are feeling ${myAnswer}.`);
 }
 	
