@@ -481,11 +481,11 @@ const commenceReview = (arr: IItem[]) => async (lastDone: number): Promise<IItem
 	return arrCopy;
 }
 	
-
+// TODO: implement using reviewable segment for review ONLY (see getReviewableSegment)
 const reviewIfPossible = (arr: IItem[]) => async (lastDone: number): Promise<IItem[]> =>
 	isReviewableList(arr)(lastDone)
-		? (//console.log(`Commencing review from index ${getFirstReviewableIndex(arr)(lastDone)}...`),
-			commenceReview(arr)(lastDone))
+		? (console.log(`Commencing review from index ${getFirstReviewableIndex(arr)(lastDone)}...`),
+			await commenceReview(arr)(lastDone))
 		: (//console.log(`Skipping review (list is not reviewable)...`),
 			arr);
 
@@ -495,10 +495,13 @@ const getNonReviewableSegment = (arr: IItem[]) => (i: number) =>
 const getReviewableSegment = (arr: IItem[]) => (i: number) =>
 	arr.slice(i)
 
+// TODO: resolve bug where reviewed items are not marked correctly
 // should only return IItem[], should only take arr, lastDone
 const resolveMarkState = async (appData: IAppData): Promise<IAppData> =>
-	returnAppDataBackToMenu({currentState: appData.currentState,
-		myList: await reviewIfPossible(markFirstMarkableIfPossible(appData.myList)(appData.lastDone))(appData.lastDone),
+	returnAppDataBackToMenu({currentState: 'menu',
+		myList: await reviewIfPossible(
+				markFirstMarkableIfPossible(appData.myList)(appData.lastDone)
+			)(appData.lastDone),
 		lastDone: appData.lastDone});
 
 const isFocusableList = (appData: IAppData): boolean =>
@@ -578,6 +581,9 @@ const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 			? resolveAddState(appData)
 			: appData.currentState === 'mark'
 				? resolveMarkState(appData)
+					.then(x => x)
+					.catch(e => console.log(`Error ${e}...`))
+					.then(() => returnAppDataBackToMenu(appData))
 				: appData.currentState === 'do'
 					? resolveDoState(appData)
 					: resolveMutatingErrorState(appData)
