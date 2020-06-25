@@ -2,7 +2,7 @@ import { promptUserAtMenuToChangeState, getNumberFromUser, populateDemoList,
 	sayState, createAndAddNewItemViaPrompt, IItem, TAppState, changeState, 
 	getNameIO, askOpenEndedIO, printMenu, menuList, menuTexts, printListOrStatus, 
 	printBlankLine, stringifyList, printStatsBlock, markFirstMarkableIfPossible, 
-	askOptional, printList } from ".";
+	askOptionalIO, printList } from ".";
 
 const doAutoMarkingTest = () => {
 	let myList: IItem[] = [];
