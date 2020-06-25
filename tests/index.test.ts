@@ -4,7 +4,7 @@ import { step } from 'mocha-steps';
 import { createGreeting, getPluralS, isPluralFromCount, notEmptyString, isNegOne, getPositiveMin, 
 	IItem, addItem, createNewItem, findFirstMarkable, TItemStatus, getCMWTDstring, statusToMark, 
 	isReviewableList, markFirstMarkableIfPossible, getFirstReviewableIndex, mapUnmarkedToIndexAndFilter, 
-	getFirstUnmarkedAfterIndex, getCMWTDindex } from "../src";
+	getFirstUnmarkedAfterIndex, getCMWTDindex, isMarkableList, SIMenterFocusState, IAppData } from "../src";
 
 export const FRUITS = [
   "apple",
@@ -202,12 +202,13 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
 		// note: this IS markable, just not yet reviewable
-    it("determines list `[x] [ ] [ ]` NOT ready for review", () => {
+    it("determines list `[x] [ ] [ ]` NOT ready for review but IS auto-markable", () => {
 			const todoList: IItem[] = makeNItemArray(3);
 			let lastDone: number = -1;
 			todoList[0].status = 'complete';
 			lastDone = 0;
-      expect(listToMarksString(todoList)).equals("[x] [ ] [ ]");
+			expect(listToMarksString(todoList)).equals("[x] [ ] [ ]");
+			expect(isMarkableList(todoList)(lastDone)).equals(true); // diff from original tests
 			expect(isReviewableList(todoList)(lastDone)).equals(false); // diff from original tests
 			expect(getFirstReviewableIndex(todoList)(lastDone)).equals(-1);
     });
@@ -256,18 +257,20 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
   });
 
-  // describe("Determining the last done index", () => {
-  //   it("gets the correct index as last done", () => {
-  //     let todoList: IItem[] = makeNItemArray(3);
-  //     let lastDone = "";
-  //     todoList = setupReview(todoList);
-  //     [todoList, lastDone] = conductFocus(todoList, lastDone, {
-  //       workLeft: "n"
-  //     });
-  //     expect(getLastDoneIndex(todoList, lastDone)).equals(0);
-  //     expect(listToMarksString(todoList)).equals("[x] [ ] [ ]");
-  //   });
-  // });
+	// todoList = markFirstMarkableIfPossible(todoList)(lastDone);
+	// SIMenterFocusState(myApp)
+  describe("Determining the last done index", () => {
+    it("gets the correct index as last done", () => {
+      let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(3), lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // todoList = setupReview(todoList);
+			myApp = SIMenterFocusState(myApp);
+			// [todoList, lastDone] = conductFocus(todoList, lastDone, {
+      //   workLeft: "n"
+      // });
+      expect(myApp.lastDone).equals(0); // original: 'getLastDoneIndex(todoList, lastDone)'
+      expect(listToMarksString(myApp.myList)).equals("[x] [ ] [ ]");
+    });
+  });
 
   // describe("Determining where reviews start", () => {
   //   it("should return index 2 on list with `[x] [o] [ ]` state", () => {
