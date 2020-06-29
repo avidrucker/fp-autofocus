@@ -591,3 +591,199 @@ describe('Long E2E test', () => {
 		});
 	}); 
 });
+
+describe('REVIEW MODE INTEGRATION TESTS', ()=> {
+	describe('Reviewing 0 item list',() => {
+		// when there are no todo items, does not affect the todo list
+		it('returns back empty list', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: [], lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no todo items."
+			//todoList = conductAllReviews(todoList, lastDone, []); // "There are no todo items."
+			myApp = SIMenterReviewState(myApp)([]);
+			expect(myApp.myList.length).equals(0);
+			expect(getCMWTDindex(myApp.myList)).equals(-1);
+		})
+	})
+	
+	describe('Setting up review for 1 item list',()=> {
+		// with no dottable items returns back the items as is
+		it('returns list with marked item as-is',() => {
+			// make a list with one marked item
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(1), lastDone: -1};
+			myApp.myList[0].status = 'dotted';
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			expect(listToMarksString(myApp.myList)).equals("[o]");
+		})
+	
+		// with only one dottable item returns a dotted item
+		it('returns list with unmarked item marked',()=>{
+			// make a list with one unmarked item
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(1), lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			expect(listToMarksString(myApp.myList)).equals("[o]");
+		})
+	})
+	
+	describe('Reviewing 2 item list',()=> {
+		it(`with 'y' answer results in two marked items & 2nd item cmwtd`,() => {
+			// make a list with one marked, one complete
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(2), lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterReviewState(myApp)(['y']);
+			expect(myApp.myList.length).equals(2);
+			expect(getCMWTDstring(myApp.myList)).equals(FRUITS[1]);
+		})
+
+		// with no dottable items returns back the items as is
+		// doesn't affect the list if all items are dotted to begin with
+		it('returns list with 0 unmarked items as-is',() => {
+			// make a list with one marked, one complete
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(2), lastDone: -1};
+			myApp.myList = markAllAs(myApp.myList)('dotted');
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no ready items."
+			myApp = SIMenterReviewState(myApp)([]);
+			expect(myApp.myList.length).equals(2);
+			expect(getCMWTDstring(myApp.myList)).equals(FRUITS[1]);
+		})
+	
+		// issue: Architect assess whether firstReady func is appropriate for test #288
+		it('returns list as-is when first non-complete, non-archived item is marked',()=>{
+			// returns back first non-complete, non-archived "ready" item as marked
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(2), lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // intentional double invocation
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // intentional double invocation
+			expect(myApp.myList[0].status).equals('dotted');
+			expect(myApp.myList[1].status).equals('unmarked');
+			expect(getCMWTDstring(myApp.myList)).equals(FRUITS[0]);
+		})
+	
+		// should result in the first item being dotted if it wasn't already
+		it('modifies list where 1st item is not marked', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(2), lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			expect(myApp.myList[0].status).equals('dotted');
+		})
+	})
+
+	describe('Conducting reviews', ()=> {
+		// with no dottable items returns back the items as is
+		it('when 0 ready items, doesn\'t affect the todo list', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(2), lastDone: -1};
+			
+			myApp.myList[0].status = 'complete';
+			myApp.myList[1].status = 'complete';
+
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterReviewState(myApp)([]);
+
+
+			expect(myApp.myList.length).equals(2);
+			expect(getCMWTDindex(myApp.myList)).equals(-1);
+		});
+	
+		it('should return a list of items marked `[o] [ ] [o]` for input [`n`, `y`] ', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(3), lastDone: -1};
+	
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterReviewState(myApp)(['n','y']); // reviews from last marked (CMWTD) if lastDone is not set
+
+			expect(getCMWTDstring(myApp.myList)).equals(FRUITS[2]);
+			expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
+		});
+
+		it('should return a list of items marked `[o] [ ] [ ]` for input [`n`, `n`]', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(3), lastDone: -1};
+	
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterReviewState(myApp)(['n','n']);
+			expect(getCMWTDstring(myApp.myList)).equals(FRUITS[0]);
+			expect(listToMarksString(myApp.myList)).equals("[o] [ ] [ ]");
+		});
+
+		it('reviews from first unmarked if CMWTD is not set', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(3), lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterFocusState(myApp);
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterReviewState(myApp)(['y']);
+			expect(listToMarksString(myApp.myList)).equals("[x] [o] [o]");
+		})
+	});
+
+	// issue: Dev refactors "review from lastDone if set" case into suite #290
+	describe('reviews from lastDone if set', () => {
+		let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(5), lastDone: -1};
+			
+		step('should allow correct first review and focus', () => {
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterReviewState(myApp)(['n','y','n','n']);
+			//[todoList, lastDone ] = conductFocus(todoList, lastDone, {workLeft: 'n'});
+			myApp = SIMenterFocusState(myApp);
+			expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [ ]");
+			expect(getCMWTDstring(myApp.myList)).equals(myApp.myList[0].textName);
+		})
+		
+		step('should allow correct 2nd review', () => {
+			myApp = SIMenterReviewState(myApp)(['n','y']);
+			expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [o]");
+		})
+	})
+
+	// formerly "Second mini E2E test"
+	describe('integration test of review completion', () => {
+		describe('should lead to no reviewable items', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: [], lastDone: -1};
+			const aList = ["a","b"];
+
+			step('should confirm 2 items has been added', () => {
+				aList.forEach(
+					x => {myApp.myList = addItem(myApp.myList)(createNewItem(x)(myApp.myList.length))}
+				);
+
+				expect(myApp.myList.length).equals(2);
+			});
+
+			step('should confirm that the 1st item has been marked', () => {
+				myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+				expect(myApp.myList[0].status).equals('dotted');
+			})
+
+			step('should re-confirm 1 item have been marked', () => {
+				myApp = SIMenterReviewState(myApp)(['y']);
+				expect(listToMarksString(myApp.myList)).equals("[o] [o]");
+			});
+
+			step('should confirm that CMWTD has been updated to last marked item',() => {
+				expect(getCMWTDstring(myApp.myList)).equals(myApp.myList[1].textName);
+			});
+
+			step('should confirm that reviewing does nothing now', () => {
+				myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+				expect(myApp.myList[0].status).equals('dotted');
+				expect(myApp.myList[1].status).equals('dotted');
+			})
+
+			step('should confirm only item has been completed',() => {
+				//[todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft: "n"});
+				myApp = SIMenterFocusState(myApp);
+				expect(myApp.myList[1].status).equals('complete');
+			});
+
+			step('should confirm that CMWTD has been updated',() => {
+				expect(getCMWTDstring(myApp.myList)).equals(myApp.myList[0].textName);
+			});
+		});
+	});
+
+	describe('Reviewing lists with completed items',()=>{
+		it('works only on reviewable subset of list',()=>{
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(5), lastDone: 0};
+			myApp.myList[0].status = 'complete';
+			myApp.myList[2].status = 'complete';
+			myApp.myList[4].status = 'complete';
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); //todoList = setupReview(todoList);
+			myApp = SIMenterReviewState(myApp)(['y']); //todoList = conductAllReviews(todoList, lastDone, ['y']);
+			expect(listToMarksString(myApp.myList)).equals("[x] [o] [x] [o] [x]");
+		});
+	});
+});
