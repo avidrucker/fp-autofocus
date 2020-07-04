@@ -57,9 +57,9 @@ export const addItem = (arr: IItem[]) => (newItem: IItem) =>
 	(//console.log(`Adding new item '${newItem.textName}' to list...`),
 	pushToAndReturnArr(arr)(newItem));
 
-export const createNewItem = (s: string) => (nextIndex: number): IItem =>
+export const createNewItem = (nameInput: string) => (nextIndex: number): IItem =>
 	(//console.log(`New item '${s}' successfully created`),
-	{index: nextIndex, status: 'unmarked', textName: s}); // isHidden: false
+	{index: nextIndex, status: 'unmarked', textName: nameInput}); // isHidden: false
 
 // a kind of pretty print
 const stringifyVerbose = (i: IItem): string =>
@@ -92,8 +92,8 @@ export const stringifyList = (xs: IItem[]): string[] =>
 const isEmptyArr = <T>(arr: T[]): boolean =>
 	arr.length === 0;
 
-export const printList = (xs: string[]): void =>
-	xs.forEach(x => console.log(x));
+export const printList = (nameTexts: string[]): void =>
+	nameTexts.forEach(x => console.log(x));
 
 export const printEmptyList = () =>
 	console.log(emptyList);
@@ -110,11 +110,11 @@ export const isPluralFromCount = (count: number): boolean =>
 export const getPluralS = (isPlural: boolean): string =>
 	isPlural ? 's' : '';
 
-const pluralizeIfNotZero = (s: string) => (count: number) =>
-	`${s}${getPluralS(isPluralFromCount(count))}`
+const pluralizeIfNotZero = (word: string) => (count: number) =>
+	`${word}${getPluralS(isPluralFromCount(count))}`
 
-export const notEmptyString = (s: string): boolean =>
-	s === "" ? false : true;
+export const notEmptyString = (strInput: string): boolean =>
+	strInput === "" ? false : true;
 
 export const isNegOne = (n: number): boolean =>
 	n === -1;
@@ -258,14 +258,20 @@ const filterOnMarked = (arr: IItem[]) =>
 // TODO: refactor to not mutate state, and instead return a newly constructed array of items
 const dotIndex = (arr: IItem[]) => (i: number): IItem[] =>
 	// console.log(`Modifying item at index ${i} to be dotted...`)
-	(arr[i].status = 'dotted',
-	arr)
+	// (arr[i] = dotItem(arr[i]),
+	// arr)
+	arr.map((x, current) => (current === i
+		? dotItem(x)
+		: x ));
 
 // arr === item list, i === index
 const markComplete = (arr: IItem[]) => (i: number): IItem[] =>
 	// console.log(`Modifying item at index ${i} to be complete...`)
-	(arr[i].status = 'complete',
-	arr);
+	// (arr[i].status = 'complete',
+	// arr);
+	arr.map((x, current) => (current === i
+		? completeItem(x)
+		: x ));
 
 const filterOnUnmarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "unmarked")
@@ -450,9 +456,9 @@ const deepCopy = <T>(x: T): T =>
 	JSON.parse(JSON.stringify(x));
 
 // s === string label
-const printListData = (arr: IItem[]) => (s: string): void => {
+const printListData = (arr: IItem[]) => (labelText: string): void => {
 	console.log()
-	console.log(`${s}`)
+	console.log(`${labelText}`)
 	console.log(arr);
 	console.log()
 }
@@ -464,14 +470,14 @@ const askWhich = (arr: IItem[]) => async (i: number): Promise<string> =>
 	await askOptionalYNio(
 		generateWhichQuestion(getTextByIndex(arr)(i))(getCMWTDstring(arr)));
 
-const interpretWhich = (s: string): TAnswerState =>
-	s.toLowerCase()  === 'q'
+const interpretWhich = (textInput: string): TAnswerState =>
+	textInput.toLowerCase()  === 'q'
 	? (//console.log('Quitting mid-review...'),
 		'quit')
-	: s.toLowerCase() === 'y'
+	: textInput.toLowerCase() === 'y'
 		? (//console.log(`Answered 'yes': Dotting current index ...`),
 			'yes')
-		: s.toLowerCase() === 'n'
+		: textInput.toLowerCase() === 'n'
 			? (//console.log(`Answered 'no': Returning back array...`),
 			'no')
 			:  (//console.log(`Error has occured, returning original array...`),
@@ -524,6 +530,7 @@ const isComplete = (x: IItem) =>
 
 const doNothing = () => {};
 
+// TODO: refactor to note use state mutation
 // TODO: refactor to not use forloop and instead use fp
 const SIMcommenceReview = (arr: IItem[]) => (lastDone: number) => (answerAbbrevs: TValidAnswer[]): IItem[] => {
 	let answerIndex = 0;
@@ -539,8 +546,8 @@ const SIMcommenceReview = (arr: IItem[]) => (lastDone: number) => (answerAbbrevs
 				? (// console.log(`Skipping completed item at index ${i}`),
 					doNothing())
 				: !doneReviewing && answerAbbrevs[answerIndex] === 'y'
-					? (//console.log(`Marking item at index ${i} because YES answer`),
-						dotIndex(arr)(i),
+					? (console.log(`Marking item at index ${i} because YES answer`),
+						(arr = dotIndex(arr)(i)), // WARNING: state mutation
 						answerIndex++)
 					: (//console.log(`Skipping item at index ${i} because NO answer`),
 						answerIndex++)
@@ -627,8 +634,8 @@ export const SIMenterFocusState = (appData: IAppData): IAppData =>
 	);
 
 // s === item textName string
-const queryUserIsThereMoreWorkLeft = async (s: string): Promise<string> =>
-	askOptionalYNio(`Is there work remaining to do on item '${s}'? [Y]es/[N]o `);
+const queryUserIsThereMoreWorkLeft = async (itemText: string): Promise<string> =>
+	askOptionalYNio(`Is there work remaining to do on item '${itemText}'? [Y]es/[N]o `);
 
 const duplicateLastDoneandAddToList = (arr: IItem[]) => (lastDone: number): IItem[] =>
 	(arr.push(
