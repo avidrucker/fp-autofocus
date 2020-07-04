@@ -787,3 +787,22 @@ describe('REVIEW MODE INTEGRATION TESTS', ()=> {
 		});
 	});
 });
+
+describe('TODO LIST INTEGRATION TESTS', () => {
+	describe('List to marks function', () => {
+		it('should return a list of items marked `[o] [ ]` for a given list', () => {
+			const todoList: IItem[] = makeNItemArray(2);
+			todoList[0].status = 'dotted';
+			expect(listToMarksString(todoList)).equals("[o] [ ]");
+		})
+	})
+
+	describe('Conducting list iteration', () => {
+		it('should correctly update CMWTD for input `[n, y]` ', () => {
+			let myApp: IAppData = {currentState: 'menu', myList: makeNItemArray(3), lastDone: -1};
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no todo items."
+			myApp = SIMenterReviewState(myApp)(['n','y']); //todoList = conductAllReviews(todoList, lastDone, ['y']);
+			expect(getCMWTDstring(myApp.myList)).equals(FRUITS[2]);
+		});
+	})
+});
