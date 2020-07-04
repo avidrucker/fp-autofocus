@@ -546,7 +546,7 @@ const SIMcommenceReview = (arr: IItem[]) => (lastDone: number) => (answerAbbrevs
 				? (// console.log(`Skipping completed item at index ${i}`),
 					doNothing())
 				: !doneReviewing && answerAbbrevs[answerIndex] === 'y'
-					? (console.log(`Marking item at index ${i} because YES answer`),
+					? (//console.log(`Marking item at index ${i} because YES answer`),
 						(arr = dotIndex(arr)(i)), // WARNING: state mutation
 						answerIndex++)
 					: (//console.log(`Skipping item at index ${i} because NO answer`),
