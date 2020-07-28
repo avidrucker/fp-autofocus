@@ -1,11 +1,7 @@
 "use strict";
 
 const readline = require('readline')
-// const Future = require('fluture')
-// const fs = require('fs');
-// import { createInterface } from 'readline'
-// import { Task } from 'fp-ts/lib/Task'
-// import { resolve } from 'path';
+
 import { exit } from 'process';
 
 export type TItemStatus =  'unmarked' | 'dotted' | 'complete';
