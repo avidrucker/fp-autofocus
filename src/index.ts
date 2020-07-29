@@ -6,7 +6,7 @@ import { exit } from 'process';
 
 export type TItemStatus =  'unmarked' | 'dotted' | 'complete';
 
-const doneFocusing = 'Once you have finished focusing on this task, tap the enter key.';
+const doneFocusing = 'Once you finish focusing on this task, tap the enter key.';
 const skippingReview = `Skipping review (list is not reviewable)...`;
 const emptyList = "There are no items in your to-do list.";
 const makeMenuSelection = `Please make a menu selection.`;
@@ -18,6 +18,9 @@ const errorReadingState = `It appears there was an error reading state...`;
 const errorMutatingState = `It appears there was an error mutating state...`;
 const setupDemoData = `Setting up starting demo data...`;
 const demoDataComplete = `... demo data setup is complete.`;
+const wantToHideCompleted = "Do you want to hide completed items? ";
+const enterNewItem = `Please enter a to-do item: `;
+const indexAtEndOfArr = `Index is at the end of the array, returning not found...`;
 
 const marks = {
 	unmarked: ' ',
@@ -42,7 +45,8 @@ export interface IAppData {
 	lastDone: number
 }
 
-export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 'hide' | 'read-about' | 'quit';
+export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' |
+ 'hide' | 'read-about' | 'quit';
 
 const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
 	(arr.push(newItem),
@@ -55,17 +59,27 @@ export const addItem = (arr: IItem[]) => (newItem: IItem) =>
 
 export const createNewItem = (nameInput: string) => (nextIndex: number): IItem =>
 	(//console.log(`New item '${s}' successfully created`),
-	{index: nextIndex, status: 'unmarked', textName: nameInput, isHidden: false}); // isHidden: false
+	{index: nextIndex,
+		status: 'unmarked',
+		textName: nameInput,
+		isHidden: false}); // isHidden: false
 
 // a kind of pretty print
+// , ${i.isHidden ? 'hidden' : 'not hidden'}
 const stringifyVerbose = (i: IItem): string =>
-	`Item: '${i.textName}', status: ${i.status}` // , ${i.isHidden ? 'hidden' : 'not hidden'}
+	`Item: '${i.textName}', status: ${i.status}`;
 
 const dotItem = (i: IItem): IItem =>
-	({index: i.index, status: 'dotted', textName: i.textName, isHidden: i.isHidden})
+	({index: i.index,
+		status: 'dotted',
+		textName: i.textName,
+		isHidden: i.isHidden})
 
 const completeItem = (i: IItem): IItem =>
-	({index: i.index, status: 'complete', textName: i.textName, isHidden: i.isHidden})
+	({index: i.index,
+		status: 'complete',
+		textName: i.textName,
+		isHidden: i.isHidden})
 
 export const statusToMark = (x: TItemStatus): string =>
 	`${marks[x]}`
@@ -184,8 +198,9 @@ export const possibleStates: IOneToManyMap<TAppState> = {
 	'quit': []
 }
 
+// TODO: make list visible at all times for command line app
 export const menuTexts: any = {
-	'see':'View List', // TODO: make list visible at all times for command line app
+	'see':'View List',
 	'add':'Add New To-Do',
 	'mark':'Review & Dot List',
 	'do':'Focus on To-Do',
@@ -194,14 +209,14 @@ export const menuTexts: any = {
 	'quit': 'Exit Program'
 };
 
-export const menuList: TAppState[] = ['see', 'add', 'mark', 'do', 'hide', 'read-about', 'quit'];
+export const menuList: TAppState[] = 
+	['see', 'add', 'mark', 'do', 'hide', 'read-about', 'quit'];
 
 const printMenuItem = (x: TAppState) => (i: number) =>
 	console.log(`${i+1}: ${x}`)
 
 const printMenuHeader = () =>
-	(console.log(`----------`),
-	console.log('MAIN MENU'));
+	console.log('MAIN MENU');
 
 export const printMenu = (menuList: TAppState[]) => (menuTexts: any): number =>
 	(printMenuHeader(),
@@ -212,7 +227,8 @@ const existsInArr = (arr: any) => (target: any) =>
 	!isNegOne(arr.indexOf(target));
 
 const transitionalble = (current: TAppState) => (next: TAppState) => (states: any) =>
-	existsInArr(Object.keys(states))(current) && existsInArr(possibleStates[current])(next)
+	existsInArr(Object.keys(states))(current) && 
+		existsInArr(possibleStates[current])(next);
 
 export const changeState = (current: TAppState) => (next: TAppState) =>
 	transitionalble(current)(next) ? next : current;
@@ -223,10 +239,13 @@ export const sayState = (state: TAppState): void =>
 const inRangeInclusive = (lower: number) => (upper: number) => (x: number) =>
 	x >= lower && x <= upper
 
+const createNumRangePrompt = (a: number) => (b: number): string =>
+	`Please choose a number from ${a} to ${b}: `;
+
 // queries user for a number between `first` and `last` (inclusive)
 export const getNumberFromUser = (first: number) => (last: number) =>
 	new Promise<number>((resolve) => {
-		rl.question(`Please choose a number from ${first} to ${last}: `, (num: string) => {
+		rl.question(createNumRangePrompt(first)(last), (num: string) => {
 			inRangeInclusive(first)(last)(Number(num))
 				? resolve(Number(num))
 				: resolve(getNumberFromUser(first)(last));
@@ -241,7 +260,7 @@ export const promptUserAtMenuToChangeState =
 	changeState(s)(menuList[await promptUserForMenuOption(menuList)]);
 
 const promptUserToHide = async (): Promise<boolean> => 
-	(await askOptionalYNio("Do you want to hide completed items?"))
+	(await askOptionalYNio(wantToHideCompleted))
 		.toLowerCase() === 'y';
 
 const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =>
@@ -250,15 +269,17 @@ const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =
 	await getNumberFromUser(1)(menuList.length) - 1);
 
 // TODO: implement with askOptional to cancel to-do input
-export const createAndAddNewItemViaPrompt = async (arr: IItem[]): Promise<IItem[]> =>
+export const createAndAddNewItemViaPrompt = 
+	async (arr: IItem[]): Promise<IItem[]> =>
 	addItem(arr)(createNewItem(
-		await askOpenEndedIO(`Please enter a to-do item: `)
+		await askOpenEndedIO(enterNewItem)
 		)(arr.length));
 
 const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "dotted")
 
-// TODO: refactor to not mutate state, and instead return a newly constructed array of items
+// TODO: refactor to not mutate state, and instead
+// return a newly constructed array of items
 const dotIndex = (arr: IItem[]) => (i: number): IItem[] =>
 	arr.map((x, current) => (current === i
 		? (// console.log(`Modifying item at index ${i} to be dotted...`),
@@ -288,17 +309,19 @@ const listHasUnmarkedAfterIndex = (arr: IItem[]) => (i: number) =>
 const hasMarked = (arr: IItem[]): boolean =>
 	isPositive(countMarked(arr))
 
-// TODO: attempt to simplify this logic... it appears that lastDone is not necessary to evaluate
+// TODO: attempt to simplify this logic...
+// it seems that lastDone is not necessary to evaluate
 export const isMarkableList = (arr: IItem[]) => (lastDone: number): boolean =>
 	isEmptyArr(arr) // array must have items in it
 		? false
-			: isNegOne(lastDone) && !hasMarked(arr) && hasUnmarked(arr) // there may not be any marked items already
+			: isNegOne(lastDone) && !hasMarked(arr) && hasUnmarked(arr)
+				// there may not be any marked items already
 				? true
 				: isNegOne(lastDone) && hasMarked(arr)
 					? false
-					: !isNegOne(lastDone) && hasUnmarked(arr) && !hasMarked(arr) && listHasUnmarkedAfterIndex(arr)(lastDone) // there must be unmarked items AFTER last done
-						? true
-						: false;
+					: !isNegOne(lastDone) && hasUnmarked(arr) &&
+							!hasMarked(arr) && listHasUnmarkedAfterIndex(arr)(lastDone);
+							// there must be unmarked items AFTER last done
 
 const countUnmarked = (arr: IItem[]): number =>
 	filterOnUnmarked(arr).length
@@ -309,16 +332,26 @@ const countMarked = (arr: IItem[]): number =>
 export const mapUnmarkedToIndexAndFilter = (arr: IItem[]): number[] =>
 	arr.filter(x => x.status === "unmarked").map(x => x.index)
 
+///// ? true ///// TODO: search for and selectively remove
+
+const logGet1stUnmarkedAfter = (arr: IItem[]) => (i: number): void =>
+	(
+		console.log(`   Getting first unmarked index after index ${i}`
+		+ ` where ARRAY LEN is ${arr.length}...`),
+		console.log(`... it appears to be `
+		+ `${mapUnmarkedToIndexAndFilter(arr).filter(x => x > i)[0]}`)
+	);
+
 // eg: lastDone is 1, unmarked are [2, 3], we want to return 2
-export const getFirstUnmarkedAfterIndex = (arr: IItem[]) => (i: number): number =>
+export const get1stUnmarkedAfterIndex = (arr: IItem[]) =>
+	(i: number): number =>
 	arr.length < i + 1
 		? (//console.log(`Out of bounds error...`),
 			-1)
 		: arr.length === i + 1
-			? (//console.log(`Index is at the end of the array, returning not found...`),
+			? (//console.log(indexAtEndOfArr),
 				-1)
-			: (//console.log(`   Getting first unmarked index after index ${i} where ARRAY LEN is ${arr.length}...`),
-				//console.log(`... it appears to be ${mapUnmarkedToIndexAndFilter(arr).filter(x => x > i)[0]}`),
+			: (//logGet1stUnmarkedAfter(arr)(i),
 				mapUnmarkedToIndexAndFilter(arr).filter(x => x > i)[0]);
 
 // if there are marked items and no lastDone (-1) OR
@@ -334,9 +367,9 @@ export const findFirstMarkable = (arr: IItem[]) => (lastDone: number): number =>
 			: isNegOne(lastDone) && hasMarked(arr)
 				? (//console.log(`List already marked and lastDone not set, leaving list as is...`),
 				-1) // already marked lists with no lastDone cannot be auto-marked further
-				: !isNegOne(lastDone) && !hasMarked(arr) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(lastDone))
+				: !isNegOne(lastDone) && !hasMarked(arr) && !isNegOne(get1stUnmarkedAfterIndex(arr)(lastDone))
 					? (//console.log(`First markable FOUND after lastDone.`),
-						getFirstUnmarkedAfterIndex(arr)(lastDone))
+						get1stUnmarkedAfterIndex(arr)(lastDone))
 					: (//console.log(`First markable not found...`),
 						-1);
 
@@ -384,13 +417,13 @@ export const getFirstReviewableIndex = (arr: IItem[]) => (lastDone: number): num
 	: isNegOne(getCMWTDindex(arr))
 		? (//console.log(`No CMWTD found, not reviewable...`),
 			-1) // lists without a cmwtd cannot be reviewed
-		: isNeg(lastDone) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
-			? getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr)) // returns first unmarked after last marked
-			: !isNeg(lastDone) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(lastDone))
-				? getFirstUnmarkedAfterIndex(arr)(lastDone)
-				: !isNeg(lastDone) && !isNegOne(getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
+		: isNeg(lastDone) && !isNegOne(get1stUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
+			? get1stUnmarkedAfterIndex(arr)(getCMWTDindex(arr)) // returns first unmarked after last marked
+			: !isNeg(lastDone) && !isNegOne(get1stUnmarkedAfterIndex(arr)(lastDone))
+				? get1stUnmarkedAfterIndex(arr)(lastDone)
+				: !isNeg(lastDone) && !isNegOne(get1stUnmarkedAfterIndex(arr)(getCMWTDindex(arr)))
 					? (//console.log(`Resolves very unusual case "[o] [ ] [x] ready for review" ...`),
-						getFirstUnmarkedAfterIndex(arr)(getCMWTDindex(arr))) // returns first unmarked after last marked
+						get1stUnmarkedAfterIndex(arr)(getCMWTDindex(arr))) // returns first unmarked after last marked
 					: (//console.log(`First reviewable index not found...`),
 					-1);
 
@@ -415,22 +448,21 @@ const printCMWTDdata = (arr: IItem[]): void =>
 		? console.log(`CMWTD is not set yet.`)
 		: console.log(`CMWTD is, at index ${getCMWTDindex(arr)}: '${getCMWTDstring(arr)}'`)
 
-// TODO: implement wrapper higher order function
-// const wrapPrintWithLines = (f: () => void) => {
-// 	console.log(`----------`);
-// 	f();
-// 	console.log(`----------`);
-// }
+// wrapper higher order function
+const wrapPrintWithLines = (f: () => void): void => {
+	console.log(`----------`);
+	f();
+	console.log(`----------`);
+}
 
 const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu', myList: appData.myList, lastDone: appData.lastDone });
 
-const printListHeader = () =>
-	(console.log(`----------`),
-	console.log('AUTOFOCUS LIST'));
+const printListHeader = (): (() => void) =>
+	() => console.log('AUTOFOCUS LIST');
 
 const resolveSeeState = (arr: IItem[]): number =>
-	(printListHeader(),
+	(wrapPrintWithLines(printListHeader()),
 	printListOrStatus(stringifyList(arr)),
 	0);
 
