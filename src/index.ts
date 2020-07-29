@@ -784,7 +784,7 @@ export const createBlankData = (): IAppData =>
 	({ currentState: 'menu', myList: [], lastDone: UNSET_LASTDONE });
 
 export const main = async () => {
-	// TODO: implement command line (console) clear()
+	console.clear();
 	greetIO();
 	await runProgram(true)(createBlankData()); // await runAdhocTests();
 	// await runProgram(true)(createStarterData());
