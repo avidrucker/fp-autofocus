@@ -727,8 +727,6 @@ const resolveHideState = async (appData: IAppData): Promise<IAppData> =>
 		: (//console.log(`Deciding not to hide...`),
 			returnAppDataBackToMenu(appData));
 
-// default: { currentState: 'menu', myList: arr, lastDone: lastDone }
-// TODO: implement app stub
 const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 	appData.currentState === 'menu'
 		? resolveMenuState(appData)
@@ -749,11 +747,9 @@ const mutatorStates: TAppState[] = ['menu', 'add', 'mark', 'do', 'hide'];
 const stateIsMutator = (s: TAppState) => (mss: TAppState[]) =>
 	!isNegOne(mss.indexOf(s));
 
-// TODO: evalute efficacy/necessity of this wrapper function
 const wrapNonMutatingStateEntry = (appData: IAppData): IAppData =>
-	enterNonMutatingState(appData) === 0
-	? returnAppDataBackToMenu(appData)
-	: returnAppDataBackToMenu(appData)
+	(enterNonMutatingState(appData),
+	returnAppDataBackToMenu(appData))
 
 const enterMenu = async (appData: IAppData): Promise<IAppData> =>
 	appData.currentState === 'quit'
