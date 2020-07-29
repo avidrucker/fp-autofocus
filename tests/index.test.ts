@@ -28,6 +28,10 @@ import {
   TValidAnswer,
   getTextByIndex,
   getStatusByIndex,
+	createBlankData,
+	createStarterData,
+	hideAllCompleted,
+	countHideable,
 } from "../src";
 
 export const FRUITS = [
@@ -42,7 +46,7 @@ export const FRUITS = [
 const wrapStrInBoxOp = (s: string): string => "[" + s + "]";
 
 const markAllAs = (arr: IItem[]) => (s: TItemStatus): IItem[] =>
-  arr.map((x) => ({ index: x.index, status: s, textName: x.textName }));
+  arr.map((x) => ({ index: x.index, status: s, textName: x.textName, isHidden: x.isHidden }));
 
 const makeNItemArray = (n: number): IItem[] => {
   let todoList: IItem[] = [];
@@ -331,7 +335,16 @@ describe("FP TESTS", () => {
       todoList = markFirstMarkableIfPossible(todoList)(lastDone);
       getFirstUnmarkedAfterIndex(todoList)(getCMWTDindex(todoList));
     });
-  });
+	});
+	
+	describe("hideAllCompleted", () => {
+		it("returns back a list of items where completed and unhidden items are now hidden", () => {
+			const appData: IAppData = createStarterData();
+			expect(countHideable(appData.myList)).equals(1); // BEFORE
+			appData.myList = hideAllCompleted(appData.myList);
+			expect(countHideable(appData.myList)).equals(0); // AFTER
+		})
+	})
 });
 
 describe("FOCUS MODE INTEGRATION TESTS", () => {
