@@ -19,7 +19,7 @@ import {
   markFirstMarkableIfPossible,
   getFirstReviewableIndex,
   mapUnmarkedToIndexAndFilter,
-  getFirstUnmarkedAfterIndex,
+  get1stUnmarkedAfterIndex,
   getCMWTDindex,
   isMarkableList,
   SIMenterFocusState,
@@ -333,7 +333,7 @@ describe("FP TESTS", () => {
       let todoList: IItem[] = makeNItemArray(2);
       const lastDone = -1; // note: this test does not use the official app API to mutate app state
       todoList = markFirstMarkableIfPossible(todoList)(lastDone);
-      getFirstUnmarkedAfterIndex(todoList)(getCMWTDindex(todoList));
+      get1stUnmarkedAfterIndex(todoList)(getCMWTDindex(todoList));
     });
 	});
 	
