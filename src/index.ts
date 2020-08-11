@@ -12,7 +12,7 @@ const emptyList = "There are no items in your to-do list.";
 const makeMenuSelection = `Please make a menu selection.`;
 const automarkingFirstMarkable = `Auto-marking first markable item...`;
 const cantAutomark = `Unable to auto-mark. Returning list as is...`;
-const cantFocus = `Cannot focus at this time, mark (dot) an item first.`;
+const cantFocus = `Cannot focus at this time. Mark (dot) an item first.`;
 const readAboutApp = `This is a stub for About AutoFocus...`;
 const errorReadingState = `It appears there was an error reading state...`;
 const errorMutatingState = `It appears there was an error mutating state...`;
@@ -20,7 +20,7 @@ const setupDemoData = `Setting up starting demo data...`;
 const demoDataComplete = `... demo data setup is complete.`;
 const wantToHideCompleted = "Do you want to hide completed items? ";
 const enterNewItem = `Please enter a to-do item: `;
-const indexAtEndOfArr = `Index is at the end of the array, returning not found...`;
+const indexAtEndOfArr = `Index is at the end of the array: returning not found...`;
 
 const marks = {
 	unmarked: ' ',
@@ -105,11 +105,13 @@ const isEmptyArr = <T>(arr: T[]): boolean =>
 export const printList = (nameTexts: string[]): void =>
 	nameTexts.forEach(x => console.log(x));
 
-export const printEmptyList = () =>
+export const printEmptyList = (): void =>
 	console.log(emptyList);
 
 export const printListOrStatus = (xs: string[]): void =>
-	isEmptyArr(xs) ? printEmptyList() : printList(xs);
+	isEmptyArr(xs)
+		? printEmptyList()
+		: printList(xs);
 
 export const createGreeting = (greeting: string) => (appName: string): string =>
 	`${greeting} ${appName}`;
@@ -218,10 +220,9 @@ const printMenuItem = (x: TAppState) => (i: number) =>
 const printMenuHeader = () =>
 	console.log('MAIN MENU');
 
-export const printMenu = (menuList: TAppState[]) => (menuTexts: any): number =>
-	(printMenuHeader(),
-	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItem(x)(i)),
-	0)
+export const printMenu = (menuList: TAppState[]) => (menuTexts: any): (() => void) =>
+	() => (printMenuHeader(),
+	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItem(x)(i)));
 
 const existsInArr = (arr: any) => (target: any) =>
 	!isNegOne(arr.indexOf(target));
@@ -263,12 +264,24 @@ const promptUserToHide = async (): Promise<boolean> =>
 	(await askOptionalYNio(wantToHideCompleted))
 		.toLowerCase() === 'y';
 
-const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =>
-	(printMenu(menuList)(menuTexts),
-	console.log(makeMenuSelection),
-	await getNumberFromUser(1)(menuList.length) - 1);
+const printAndReturn = <T>(x: T): T => {
+	console.log(`X is ${x}, now returning it...`);
+	return x;
+}
 
+const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =>
+	(
+		wrapPrintWithLines(printMenu(menuList)(menuTexts)),
+		console.log(makeMenuSelection),
+		await getNumberFromUser(1)(menuList.length) - 1 // printAndReturn() // LOG
+	);
+
+// TODO: implement ask first, return appData as is (for "unhappy path") or
+// 				appData with a new item appended
+// TODO: implement test to confirm that, new items constructed without any
+//       textHeader/title text are not added to the list, leaving it unchanged
 // TODO: implement with askOptional to cancel to-do input
+// TODO: implement fallback return of empty array "box" to signify nothing was created
 export const createAndAddNewItemViaPrompt = 
 	async (arr: IItem[]): Promise<IItem[]> =>
 	addItem(arr)(createNewItem(
@@ -448,23 +461,27 @@ const printCMWTDdata = (arr: IItem[]): void =>
 		? console.log(`CMWTD is not set yet.`)
 		: console.log(`CMWTD is, at index ${getCMWTDindex(arr)}: '${getCMWTDstring(arr)}'`)
 
+const printFence = (): void =>
+	console.log(`----------`);
+
 // wrapper higher order function
-const wrapPrintWithLines = (f: () => void): void => {
-	console.log(`----------`);
-	f();
-	console.log(`----------`);
-}
+const wrapPrintWithLines = (f: () => void): void =>
+	(printFence(),
+	f(),
+	printFence());
 
 const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu', myList: appData.myList, lastDone: appData.lastDone });
 
-const printListHeader = (): (() => void) =>
-	() => console.log('AUTOFOCUS LIST');
+const printListHeader = (): void =>
+	console.log('AUTOFOCUS LIST');
 
 const resolveSeeState = (arr: IItem[]): number =>
-	(wrapPrintWithLines(printListHeader()),
-	printListOrStatus(stringifyList(arr)),
-	0);
+	(//console.log(`RESOLVING SEE STATE...`),
+		printFence(),
+		printListHeader(),
+		printListOrStatus(stringifyList(arr)),
+		0);
 
 const resolveQuitState = (appData: IAppData): IAppData =>
 	(console.log(`See you!`),
