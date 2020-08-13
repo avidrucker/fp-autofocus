@@ -691,6 +691,13 @@ describe("E2E TESTS", () => {
 			});
 		});
 	});
+
+	// TODO: resolve bug where list with 2 items where
+	//   1 item is hidden and then archived and the remaining
+	//   unmarked item cannot be marked (but should be) 
+	describe("E2E test to isolate & confirm & resolve archive bug", () => {
+
+	})
 });
 
 describe("REVIEW MODE INTEGRATION TESTS", () => {
