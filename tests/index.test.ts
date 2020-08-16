@@ -18,24 +18,26 @@ import {
   isReviewableList,
   markFirstMarkableIfPossible,
   getFirstReviewableIndex,
-  mapUnmarkedToIndexAndFilter,
-  get1stUnmarkedAfterIndex,
+  mapUnmarkedToIDAndFilter,
   getCMWTDindex,
   isMarkableList,
   SIMenterFocusState,
   IAppData,
-  SIMenterReviewState,
   TValidAnswer,
   getTextByIndex,
   getStatusByIndex,
 	createBlankData,
 	createStarterData,
-	hideAllCompleted,
 	countHideable,
 	SIMresolveHideAndArchiveState,
-	countHidden,
 	hideAllCompletedInAppData,
 	moveHiddenToArchive,
+	logData,
+	UNSET_LASTDONE,
+	SIMenterMarkAndReviewState,
+	smartLog,
+	get1stUnmarkedIndexAfter,
+	countHidden,
 } from "../src";
 
 export const FRUITS = [
@@ -50,11 +52,11 @@ export const FRUITS = [
 const wrapStrInBoxOp = (s: string): string => "[" + s + "]";
 
 const markAllAs = (arr: IItem[]) => (s: TItemStatus): IItem[] =>
-  arr.map((x) => ({ index: x.index, status: s, textName: x.textName, isHidden: x.isHidden }));
+  arr.map((x) => ({ id: x.id, status: s, textName: x.textName, isHidden: x.isHidden }));
 
-const makeNItemArray = (n: number): IItem[] => {
+const makeNItemDemoArray = (nCount: number): IItem[] => {
   let todoList: IItem[] = [];
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < nCount; i++) {
     todoList = addItem(todoList)(
       createNewItem(FRUITS[i % FRUITS.length])(todoList.length)
     );
@@ -69,11 +71,11 @@ const listToMarksString = (arr: IItem[]) =>
     .map((x) => wrapStrInBoxOp(x))
     .join(" ");
 
-const makeNewAppData = (xs: number): IAppData => ({
+const makeNewAppData = (nCount: number): IAppData => ({
 	currentState: "menu",
-	myList: makeNItemArray(xs),
+	myList: makeNItemDemoArray(nCount),
 	myArchive: [],
-	lastDone: -1
+	lastDone: UNSET_LASTDONE
 });
 
 describe("MAIN TESTS", () => {
@@ -154,18 +156,18 @@ describe("UTILITY TESTS", () => {
   });
 });
 
-//// findFirstMarkable originally called 'getFirstUnmarked'
+// note: findFirstMarkable originally called 'getFirstUnmarked'
 describe("REVIEW MODE UNIT TESTS", () => {
   describe("Finding unmarked todos", () => {
     it("when there is one item, returns the first unmarked item", () => {
-      const todoList: IItem[] = makeNItemArray(1);
+      const todoList: IItem[] = makeNItemDemoArray(1);
       const lastDone: number = -1; // TODO: fix test case to use official app API
       expect(todoList.length).equals(1);
       expect(findFirstMarkable(todoList)(lastDone)).equals(0);
     });
 
     it("when there are multiple items, returns the first unmarked item", () => {
-      const todoList: IItem[] = makeNItemArray(2);
+      const todoList: IItem[] = makeNItemDemoArray(2);
       let lastDone: number = -1; // TODO: fix test case to use official app API
       todoList[0].status = "complete";
       lastDone = 0;
@@ -178,7 +180,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
     it("returns -1 when there are no unmarked todos", () => {
-      let todoList: IItem[] = makeNItemArray(2);
+      let todoList: IItem[] = makeNItemDemoArray(2);
       let lastDone: number = -1; // TODO: fix test case to use official app API
       todoList = markAllAs(todoList)("complete");
       lastDone = 0;
@@ -186,7 +188,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
     it("when there are both marked and unmarked items, returns the unmarked item", () => {
-      const todoList: IItem[] = makeNItemArray(2);
+      const todoList: IItem[] = makeNItemDemoArray(2);
       const lastDone: number = -1; // TODO: fix test case to use official app API
       todoList[0].status = "dotted";
       todoList[1].status = "unmarked";
@@ -197,7 +199,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
   // isReviewableList was originally 'readyToReview'
   describe("Ready to review check", () => {
     it("determines list `[o] [o] [o]` NOT ready for review", () => {
-      let todoList: IItem[] = makeNItemArray(3);
+      let todoList: IItem[] = makeNItemDemoArray(3);
       const lastDone: number = -1; // TODO: fix test case to use official app API
       todoList = markAllAs(todoList)("dotted");
       expect(listToMarksString(todoList)).equals("[o] [o] [o]");
@@ -206,7 +208,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
     it("determines list `[x] [x] [x]` NOT ready for review", () => {
-      let todoList: IItem[] = makeNItemArray(3);
+      let todoList: IItem[] = makeNItemDemoArray(3);
       let lastDone: number = -1; // TODO: fix test case to use official app API
       todoList = markAllAs(todoList)("complete");
       lastDone = 0;
@@ -217,14 +219,13 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
     it("determines list `[x] [x] [o]` NOT ready for review", () => {
       let myApp: IAppData = makeNewAppData(3);
-			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // mark the first item
 			const answers1: TValidAnswer[] = ["y", "n"];
-			myApp = SIMenterReviewState(myApp)(answers1);
+			myApp = SIMenterMarkAndReviewState(myApp)(answers1);
 			myApp = SIMenterFocusState(myApp);
 			myApp = SIMenterFocusState(myApp);
 			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(true);
 			const answers2: TValidAnswer[] = ["y"];
-			myApp = SIMenterReviewState(myApp)(answers2);
+			myApp = SIMenterMarkAndReviewState(myApp)(answers2);
 			expect(listToMarksString(myApp.myList)).equals("[x] [x] [o]"); // note: the order in which they were completed could be either 0,1 or 1,0
       expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
     });
@@ -251,7 +252,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
     it("determines list `[o] [ ] [o]` NOT ready for review", () => {
-      let todoList: IItem[] = makeNItemArray(3);
+      let todoList: IItem[] = makeNItemDemoArray(3);
       const lastDone: number = -1;  // TODO: fix test case to use official app API
       todoList[0].status = "dotted";
       todoList[2].status = "dotted";
@@ -262,7 +263,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
     // new test for fp-autofocus
     it("determines list `[o] [ ] [x]` ready for review", () => {
-      let todoList: IItem[] = makeNItemArray(3);
+      let todoList: IItem[] = makeNItemDemoArray(3);
       let lastDone: number = -1;  // TODO: fix test case to use official app API
       todoList[0].status = "dotted";
       todoList[2].status = "complete";
@@ -273,7 +274,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
     it("determines list `[o] [ ] [o] [ ]` ready for review", () => {
-      let todoList: IItem[] = makeNItemArray(4);
+      let todoList: IItem[] = makeNItemDemoArray(4);
       const lastDone: number = -1;  // TODO: fix test case to use official app API
       todoList[0].status = "dotted";
       todoList[2].status = "dotted";
@@ -283,14 +284,13 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
     it("determines list `[x] [o] [ ]` ready for review", () => {
-      const todoList: IItem[] = makeNItemArray(3);
-      let lastDone: number = -1;  // TODO: fix test case to use official app API
-      todoList[0].status = "complete";
-      lastDone = 0;
-      todoList[1].status = "dotted";
-      expect(listToMarksString(todoList)).equals("[x] [o] [ ]");
-      expect(isReviewableList(todoList)(lastDone)).equals(true);
-      expect(getFirstReviewableIndex(todoList)(lastDone)).equals(2);
+      let myApp: IAppData = makeNewAppData(3);
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterMarkAndReviewState(myApp)(['y']);
+      expect(listToMarksString(myApp.myList)).equals("[x] [o] [ ]");
+      expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(true);
+      expect(getFirstReviewableIndex(myApp.myList)(myApp.lastDone)).equals(2);
     });
   });
 
@@ -298,8 +298,8 @@ describe("REVIEW MODE UNIT TESTS", () => {
   // SIMenterFocusState(myApp)
   describe("Determining the last done index", () => {
     it("gets the correct index as last done", () => {
-      let myApp: IAppData = makeNewAppData(3);
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // todoList = setupReview(todoList);
+			let myApp: IAppData = makeNewAppData(3);
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
 			myApp = SIMenterFocusState(myApp);
 			// TODO: implement test to confirm that workLeft can be set to true and a duplicate item is successfully added
       // [todoList, lastDone] = conductFocus(todoList, lastDone, {
@@ -326,17 +326,17 @@ describe("REVIEW MODE UNIT TESTS", () => {
 describe("FP TESTS", () => {
   describe("Counting of unmarked items", () => {
     it("returns 2 for a list of two unmarked items", () => {
-      const todoList: IItem[] = makeNItemArray(2);
-      expect(mapUnmarkedToIndexAndFilter(todoList).length).equals(2);
+      const todoList: IItem[] = makeNItemDemoArray(2);
+      expect(mapUnmarkedToIDAndFilter(todoList).length).equals(2);
     });
   });
 
   describe("Finding of first unmarked items after a specified index", () => {
     it("returns 1 for a list of 2 items where the first item is marked", () => {
-      let todoList: IItem[] = makeNItemArray(2);
-      const lastDone = -1;  // TODO: fix test case to use official app API
-      todoList = markFirstMarkableIfPossible(todoList)(lastDone);
-      get1stUnmarkedAfterIndex(todoList)(getCMWTDindex(todoList));
+			//////
+			let myApp: IAppData = makeNewAppData(2);
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
+      get1stUnmarkedIndexAfter(myApp.myList)(getCMWTDindex(myApp.myList));
     });
 	});
 	
@@ -435,19 +435,12 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
       });
 
       step("should confirm that the 1st item has been marked", () => {
-        myApp.myList = markFirstMarkableIfPossible(myApp.myList)(
-          myApp.lastDone
-        );
-        // todoList = setupReview(todoList);
-        expect(getStatusByIndex(myApp.myList)(0)).equals("dotted");
-      });
-
-      step("should re-confirm 1 item have been marked", () => {
         const answers001: TValidAnswer[] = ["q"];
 
-        myApp = SIMenterReviewState(myApp)(answers001);
+        myApp = SIMenterMarkAndReviewState(myApp)(answers001);
         //todoList = conductAllReviews(todoList, lastDone, answers001);
-        expect(listToMarksString(myApp.myList)).equals("[o]");
+				expect(listToMarksString(myApp.myList)).equals("[o]");
+				expect(getStatusByIndex(myApp.myList)(0)).equals("dotted");
       });
 
       step(
@@ -497,14 +490,9 @@ describe("E2E TESTS", () => {
 				expect(listToMarksString(myApp.myList)).equals("[ ] [ ] [ ]");
 			});
 	
-			step("should confirm that the 1st item has been marked", () => {
-				myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-				expect(listToMarksString(myApp.myList)).equals("[o] [ ] [ ]");
-			});
-	
 			step("should confirm 3 items have been marked", () => {
 				const answers001: TValidAnswer[] = ["y", "y"];
-				myApp = SIMenterReviewState(myApp)(answers001);
+				myApp = SIMenterMarkAndReviewState(myApp)(answers001);
 				expect(listToMarksString(myApp.myList)).equals("[o] [o] [o]");
 			});
 	
@@ -527,7 +515,7 @@ describe("E2E TESTS", () => {
 	
 			step("should confirm that all items are indexed sequentially", () => {
 				for (let i = 0; i < myApp.myList.length; i++) {
-					expect(myApp.myList[i].index).equals(i);
+					expect(myApp.myList[i].id).equals(i);
 				}
 			});
 		});
@@ -562,7 +550,7 @@ describe("E2E TESTS", () => {
 	
 			// "put a dot in front of the first task"
 			step("should confirm that the 1st item has been marked", () => {
-				myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+				myApp = SIMenterMarkAndReviewState(myApp)([]);
 				expect(getStatusByIndex(myApp.myList)(0)).equals("dotted");
 			});
 	
@@ -574,7 +562,7 @@ describe("E2E TESTS", () => {
 			// review items, saying yes only for 3rd & 5th items
 			step("should confirm 3 items have been marked", () => {
 				const answers001: TValidAnswer[] = ["n", "y", "n", "y", "q"];
-				myApp = SIMenterReviewState(myApp)(answers001);
+				myApp = SIMenterMarkAndReviewState(myApp)(answers001);
 				expect(listToMarksString(myApp.myList)).equals(
 					"[o] [ ] [o] [ ] [o] [ ] [ ] [ ] [ ] [ ]"
 				);
@@ -609,7 +597,7 @@ describe("E2E TESTS", () => {
 			step("should confirm starting new review leaves list alone", () => {
 				const beforeList: string = listToMarksString(myApp.myList);
 				const beforeCMWTD: string = String(getCMWTDstring(myApp.myList));
-				myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+				myApp = SIMenterMarkAndReviewState(myApp)([]);
 				const afterList: string = listToMarksString(myApp.myList);
 				const afterCMWTD: string = String(getCMWTDstring(myApp.myList));
 				expect(beforeList).equals(afterList);
@@ -620,7 +608,7 @@ describe("E2E TESTS", () => {
 			// // but, still, it is useful to test in situations such as this
 			step("should confirm review-then-quit leaves list as-is", () => {
 				const answers: TValidAnswer[] = ["q"]; // immediately quitting, w/ no 'y' or 'n' answers
-				myApp = SIMenterReviewState(myApp)(answers);
+				myApp = SIMenterMarkAndReviewState(myApp)(answers);
 				expect(listToMarksString(myApp.myList)).equals(
 					"[o] [ ] [o] [ ] [x] [ ] [ ] [ ] [ ] [ ]"
 				);
@@ -632,7 +620,7 @@ describe("E2E TESTS", () => {
 			// // review items, saying yes only to last item (in this review it will be the 5th)
 			step("should confirm 3 specific items have been marked", () => {
 				const answers002: TValidAnswer[] = ["n", "n", "n", "n", "y"];
-				myApp = SIMenterReviewState(myApp)(answers002);
+				myApp = SIMenterMarkAndReviewState(myApp)(answers002);
 				expect(listToMarksString(myApp.myList)).equals(
 					"[o] [ ] [o] [ ] [x] [ ] [ ] [ ] [ ] [o]"
 				);
@@ -666,7 +654,7 @@ describe("E2E TESTS", () => {
 			step("should confirm 3 specific items have been marked", () => {
 				const answers003: TValidAnswer[] = ["n", "n", "y", "n", "y"];
 				//todoList = conductAllReviews(todoList, lastDone, answers003);
-				myApp = SIMenterReviewState(myApp)(answers003);
+				myApp = SIMenterMarkAndReviewState(myApp)(answers003);
 				expect(listToMarksString(myApp.myList)).equals(
 					"[o] [ ] [x] [ ] [x] [ ] [o] [ ] [o] [x]"
 				);
@@ -686,7 +674,7 @@ describe("E2E TESTS", () => {
 	
 			step("should confirm that all items are indexed sequentially", () => {
 				for (let i = 0; i < myApp.myList.length; i++) {
-					expect(myApp.myList[i].index).equals(i);
+					expect(myApp.myList[i].id).equals(i);
 				}
 			});
 		});
@@ -696,7 +684,49 @@ describe("E2E TESTS", () => {
 	//   1 item is hidden and then archived and the remaining
 	//   unmarked item cannot be marked (but should be) 
 	describe("E2E test to isolate & confirm & resolve archive bug", () => {
+		let myApp: IAppData = createBlankData();
+		const firstThree = ["a", "b"];
 
+		step("should confirm 2 items have been added", () => {
+			firstThree.forEach((x) => {
+				myApp.myList = addItem(myApp.myList)(
+					createNewItem(x)(myApp.myList.length)
+				);
+			});
+
+			expect(myApp.myList.length).equals(2);
+			expect(listToMarksString(myApp.myList)).equals("[ ] [ ]");
+		});
+
+		step("should confirm that the 1st item has been marked", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // "There are no todo items."
+			// original: myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			expect(listToMarksString(myApp.myList)).equals("[o] [ ]");
+		});
+
+		step("should confirm that the 1st item has been completed", () => {
+			myApp = SIMenterFocusState(myApp);
+			expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
+		});
+
+		step("should confirm 1st item has been hidden & archived", () => {
+			// logData(myApp);
+			myApp = SIMresolveHideAndArchiveState(myApp);
+			expect(listToMarksString(myApp.myList)).equals("[ ]");
+			// logData(myApp);
+		});
+
+		step("should confirm that both myList and myArchive have 1 item", () => {
+			expect(myApp.myList.length).equals(1);
+			expect(myApp.myArchive.length).equals(1);
+		});
+
+		step("should confirm myList isMarkable and NOT reviewable, and lastDone is unset", () => {
+			expect(isMarkableList(myApp.myList)(myApp.lastDone)).equals(true); // diff from original tests
+			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+			expect(myApp.lastDone).equals(-1);
+		});
+		//////
 	})
 });
 
@@ -705,9 +735,7 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     // when there are no todo items, does not affect the todo list
     it("returns back empty list", () => {
       let myApp: IAppData = createBlankData();
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no todo items."
-      //todoList = conductAllReviews(todoList, lastDone, []); // "There are no todo items."
-      myApp = SIMenterReviewState(myApp)([]);
+      myApp = SIMenterMarkAndReviewState(myApp)([]); // "There are no todo items."
       expect(myApp.myList.length).equals(0);
       expect(getCMWTDindex(myApp.myList)).equals(-1);
     });
@@ -717,9 +745,9 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     // with no dottable items returns back the items as is
     it("returns list with marked item as-is", () => {
       // make a list with one marked item
-      let myApp: IAppData = makeNewAppData(1);
-      myApp.myList[0].status = "dotted";
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			let myApp: IAppData = makeNewAppData(1);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
+      myApp = SIMenterMarkAndReviewState(myApp)([]); // there are no further dottable items
       expect(listToMarksString(myApp.myList)).equals("[o]");
     });
 
@@ -727,7 +755,7 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     it("returns list with unmarked item marked", () => {
       // make a list with one unmarked item
       let myApp: IAppData = makeNewAppData(1);
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+      myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
       expect(listToMarksString(myApp.myList)).equals("[o]");
     });
   });
@@ -736,10 +764,10 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 		// should NOT mark the 2nd item when the 1st item is completed because it is the last done
 		it(`returns back list of "[x] [ ]" for input "[x] [ ] (none hidden)"`, () => {
 			let myApp: IAppData = makeNewAppData(2);
-			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
 			myApp = SIMenterFocusState(myApp);
 			expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
-			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // does nothing as there are no dottable items
 			expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
 			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(true);
 		});
@@ -747,19 +775,27 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 		// should mark the 2nd item when the 1st item is completed AND HIDDEN
 		it(`returns back list of "[o]" for input "[x] [ ] (1 hidden)"`, () => {
 			let myApp: IAppData = makeNewAppData(2);
-			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the first markable item
 			myApp = SIMenterFocusState(myApp);
+			
 			expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
 			expect(countHideable(myApp.myList)).equals(1);
 			expect(countHidden(myApp.myList)).equals(0);
+			
 			myApp = SIMresolveHideAndArchiveState(myApp);
+			
 			expect(countHideable(myApp.myList)).equals(0);
 			expect(countHidden(myApp.myList)).equals(0);
 			expect(myApp.myList.length).equals(1);
 			expect(myApp.myArchive.length).equals(1);
+
+			expect(isMarkableList(myApp.myList)(myApp.lastDone)).equals(true);
 			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
-			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      expect(listToMarksString(myApp.myList)).equals("[ ]");
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the first markable item
+			
+			// smartLog("post archive successful auto-marking log")(myApp.myList)(true);
+
+      expect(listToMarksString(myApp.myList)).equals("[o]");
 		});
 	})
 
@@ -767,8 +803,8 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     it(`with 'y' answer results in two marked items & 2nd item cmwtd`, () => {
       // make a list with one marked, one complete
       let myApp: IAppData = makeNewAppData(2);
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      myApp = SIMenterReviewState(myApp)(["y"]);
+      // myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+      myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
       expect(myApp.myList.length).equals(2);
       expect(getCMWTDstring(myApp.myList)).equals(FRUITS[1]);
     });
@@ -779,8 +815,8 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
       // make a list with one marked, one complete
       let myApp: IAppData = makeNewAppData(2);
       myApp.myList = markAllAs(myApp.myList)("dotted");
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no ready items."
-      myApp = SIMenterReviewState(myApp)([]);
+      // myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no ready items."
+      myApp = SIMenterMarkAndReviewState(myApp)([]);
       expect(myApp.myList.length).equals(2);
       expect(getCMWTDstring(myApp.myList)).equals(FRUITS[1]);
     });
@@ -810,20 +846,18 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
       let myApp: IAppData = makeNewAppData(2);
 
       myApp.myList[0].status = "complete";
-      myApp.myList[1].status = "complete";
-
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      myApp = SIMenterReviewState(myApp)([]);
+			myApp.myList[1].status = "complete";
+			
+      myApp = SIMenterMarkAndReviewState(myApp)([]);
 
       expect(myApp.myList.length).equals(2);
       expect(getCMWTDindex(myApp.myList)).equals(-1);
     });
 
     it("should return a list of items marked `[o] [ ] [o]` for input [`n`, `y`] ", () => {
-      let myApp: IAppData = makeNewAppData(3);
-
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      myApp = SIMenterReviewState(myApp)(["n", "y"]); // reviews from last marked (CMWTD) if lastDone is not set
+			let myApp: IAppData = makeNewAppData(3);
+			
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]); // reviews from last marked (CMWTD) if lastDone is not set
 
       expect(getCMWTDstring(myApp.myList)).equals(FRUITS[2]);
       expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
@@ -831,18 +865,16 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 
     it("should return a list of items marked `[o] [ ] [ ]` for input [`n`, `n`]", () => {
       let myApp: IAppData = makeNewAppData(3);
-
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      myApp = SIMenterReviewState(myApp)(["n", "n"]);
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "n"]);
       expect(getCMWTDstring(myApp.myList)).equals(FRUITS[0]);
       expect(listToMarksString(myApp.myList)).equals("[o] [ ] [ ]");
     });
 
     it("reviews from first unmarked if CMWTD is not set", () => {
       let myApp: IAppData = makeNewAppData(3);
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+      myApp = SIMenterMarkAndReviewState(myApp)([]);
       myApp = SIMenterFocusState(myApp);
-      myApp = SIMenterReviewState(myApp)(["y"]);
+      myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
       expect(listToMarksString(myApp.myList)).equals("[x] [o] [ ]");
     });
   });
@@ -852,8 +884,9 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     let myApp: IAppData = makeNewAppData(5);
 
     step("should allow correct first review and focus", () => {
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      myApp = SIMenterReviewState(myApp)(["n", "y", "n", "n"]);
+			// TODO: remove all instances of the line below (myApp.myList = ...)
+			// myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y", "n", "n"]);
       //[todoList, lastDone ] = conductFocus(todoList, lastDone, {workLeft: 'n'});
       myApp = SIMenterFocusState(myApp);
       expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [ ]");
@@ -861,7 +894,7 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     });
 
     step("should allow correct 2nd review", () => {
-      myApp = SIMenterReviewState(myApp)(["n", "y"]);
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]);
       expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [o]");
     });
   });
@@ -883,14 +916,12 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
       });
 
       step("should confirm that the 1st item has been marked", () => {
-        myApp.myList = markFirstMarkableIfPossible(myApp.myList)(
-          myApp.lastDone
-        );
+        myApp = SIMenterMarkAndReviewState(myApp)([]);
         expect(myApp.myList[0].status).equals("dotted");
       });
 
       step("should re-confirm 1 item have been marked", () => {
-        myApp = SIMenterReviewState(myApp)(["y"]);
+        myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
         expect(listToMarksString(myApp.myList)).equals("[o] [o]");
       });
 
@@ -924,14 +955,14 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
   describe("Reviewing lists with completed items", () => {
     it("works only on reviewable subset of list, compares against lastDone", () => {
 			let myApp: IAppData = makeNewAppData(5);
-			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-			myApp = SIMenterReviewState(myApp)(["n", "y","n","y",]);
+			// myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp = SIMenterMarkAndReviewState(myApp)(["n", "y","n","y",]);
 			myApp = SIMenterFocusState(myApp);
 			myApp = SIMenterFocusState(myApp);
 			myApp = SIMenterFocusState(myApp);
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); //todoList = setupReview(todoList);
+      // myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); //todoList = setupReview(todoList);
 			expect(listToMarksString(myApp.myList)).equals("[x] [ ] [x] [ ] [x]");
-			myApp = SIMenterReviewState(myApp)(["y", "y"]); //todoList = conductAllReviews(todoList, lastDone, ['y']);
+			myApp = SIMenterMarkAndReviewState(myApp)(["y", "y"]); //todoList = conductAllReviews(todoList, lastDone, ['y']);
       expect(listToMarksString(myApp.myList)).equals("[x] [o] [x] [o] [x]");
     });
   });
@@ -940,7 +971,7 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 describe("TODO LIST INTEGRATION TESTS", () => {
   describe("List to marks function", () => {
     it("should return a list of items marked `[o] [ ]` for a given list", () => {
-      const todoList: IItem[] = makeNItemArray(2);
+      const todoList: IItem[] = makeNItemDemoArray(2);
       todoList[0].status = "dotted";
       expect(listToMarksString(todoList)).equals("[o] [ ]");
     });
@@ -949,9 +980,9 @@ describe("TODO LIST INTEGRATION TESTS", () => {
   describe("Conducting list iteration", () => {
     it("should correctly update CMWTD for input `[n, y]` ", () => {
       let myApp: IAppData = makeNewAppData(3);
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no todo items."
-      myApp = SIMenterReviewState(myApp)(["n", "y"]); //todoList = conductAllReviews(todoList, lastDone, ['y']);
-      expect(getCMWTDstring(myApp.myList)).equals(FRUITS[2]);
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]); //todoList = conductAllReviews(todoList, lastDone, ['y']);
+			expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
+			// smartLog("myList final test log")(myApp.myList)(true);
     });
   });
 });
