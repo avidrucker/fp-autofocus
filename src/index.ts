@@ -21,6 +21,7 @@ const demoDataComplete = `... demo data setup is complete.`;
 const wantToHideCompleted = "Do you want to hide completed items? ";
 const enterNewItem = `Please enter a to-do item: `;
 const indexAtEndOfArr = `Index is at the end of the array: returning not found...`;
+const notMarkableOrReviewable = `List is neither markable nor reviewable.`;
 
 export const UNSET_LASTDONE: Tindex = -1;
 
@@ -63,8 +64,9 @@ export const addItem = (arr: IItem[]) => (newItem: IItem) =>
 	(//console.log(`Adding new item '${newItem.textName}' to list...`),
 	pushToAndReturnArr(arr)(newItem));
 
-// TODO: refactor createNewItem calls to take in total count
-//   of items including the combined counts of myList AND myArchive
+// CRITICAL
+// ISSUE: Dev clarifies native API for item creation, enforces strict usage of combined myList,
+//    myArchive count for ID generation #22
 export const createNewItem = (nameInput: string) => (nextID: Tid): IItem =>
 	(//console.log(`New item '${s}' successfully created`),
 	{id: nextID,
@@ -99,8 +101,6 @@ const stringifyConcise = (i: IItem): string =>
 const demoList: string[] = ['make coffee',
 	'go for jog', 'watch The Incredibles'];
 
-// fixed a pesky bug here where createNewItem took a static
-// demoList.length, rather than index i
 export const populateDemoList = (arr: IItem[]): IItem[] =>
 	demoList.map((x, i) => createNewItem(x)(i))
 
@@ -169,7 +169,7 @@ export const askOpenEndedIO = (q: string) =>
 		rl.question(q, (answer: string) => { resolve(answer)})
 	});
 
-// TODO: refactor with fluture
+// ISSUE: Dev implements fluture implementation instead of Promise based #16
 export const askOptionalIO = (q: string) =>
 	new Promise<string>((resolve) => {
 		rl.question(q, (answer: string) => { 
@@ -208,7 +208,7 @@ export const possibleStates: IOneToManyMap<TAppState> = {
 	'quit': []
 }
 
-// TODO: make list visible at all times for command line app
+// ISSUE: User can always see their to-do list #23
 export const menuTexts: any = {
 	'see':'View List',
 	'add':'Add New To-Do',
@@ -222,37 +222,37 @@ export const menuTexts: any = {
 export const menuList: TAppState[] = 
 	['see', 'add', 'mark', 'do', 'hide', 'read-about', 'quit'];
 
-const printMenuItem = (x: TAppState) => (i: Tindex) =>
+const printMenuItem = (x: TAppState) => (i: Tindex): void =>
 	console.log(`${i+1}: ${x}`)
 
-const printMenuHeader = () =>
+const printMenuHeader = (): void =>
 	console.log('MAIN MENU');
 
 export const printMenu = (menuList: TAppState[]) => (menuTexts: any): (() => void) =>
 	() => (printMenuHeader(),
 	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItem(x)(i)));
 
-const existsInArr = (arr: any) => (target: any) =>
+const existsInArr = (arr: any) => (target: any): boolean =>
 	!isNegOne(arr.indexOf(target));
 
-const transitionalble = (current: TAppState) => (next: TAppState) => (states: any) =>
+const transitionalble = (current: TAppState) => (next: TAppState) => (states: any): boolean =>
 	existsInArr(Object.keys(states))(current) && 
 		existsInArr(possibleStates[current])(next);
 
-export const changeState = (current: TAppState) => (next: TAppState) =>
+export const changeState = (current: TAppState) => (next: TAppState): TAppState =>
 	transitionalble(current)(next) ? next : current;
 
 export const sayState = (state: TAppState): void =>
 	console.log(`Current state is now: '${state}'.`);
 
-const inRangeInclusive = (lower: number) => (upper: number) => (x: number) =>
+const inRangeInclusive = (lower: number) => (upper: number) => (x: number): boolean =>
 	x >= lower && x <= upper
 
 const createNumRangePrompt = (a: number) => (b: number): string =>
 	`Please choose a number from ${a} to ${b}: `;
 
 // queries user for a number between `first` and `last` (inclusive)
-export const getNumberFromUser = (first: number) => (last: number) =>
+export const getNumberFromUser = (first: number) => (last: number): Promise<number> =>
 	new Promise<number>((resolve) => {
 		rl.question(createNumRangePrompt(first)(last), (num: string) => {
 			inRangeInclusive(first)(last)(Number(num))
@@ -284,12 +284,12 @@ const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =
 		await getNumberFromUser(1)(menuList.length) - 1 // printAndReturn() // LOG
 	);
 
-// TODO: CRITICAL: change createAndAddNewItemViaPrompt call to createNewItem to use
-//   combined count of both myList and myArchive lengths
+// CRITICAL
+// ISSUE: Dev clarifies native API for item creation,
+//    enforces strict usage of combined myList, myArchive count for ID generation #22
 // TODO: implement ask first, return appData as is (for "unhappy path") or
 // 				appData with a new item appended
-// TODO: implement test to confirm that, new items constructed without any
-//       textHeader/title text are not added to the list, leaving it unchanged
+// ISSUE: Dev resolves bug where user is erroneously allowed to create no-header-text items #24
 // TODO: implement with askOptional to cancel to-do input
 // TODO: implement fallback return of empty array "box" to signify nothing was created
 export const createAndAddNewItemViaPrompt = 
@@ -334,9 +334,6 @@ const listHasUnmarkedAfterIndex = (arr: IItem[]) => (i: Tindex): boolean =>
 const hasMarked = (arr: IItem[]): boolean =>
 	isPositive(countMarked(arr));
 
-///// isReviewableList
-// TODO: attempt to simplify this logic...
-// it seems that lastDone is not necessary to evaluate
 export const isMarkableList = (arr: IItem[]) => (lastDone: Tindex): boolean =>
 	isEmptyArr(arr) || !hasUnmarked(arr) // array must have items in it // there must be unmarked items
 		? (//console.log(`1. EMPTY LIST OR NO UNMARKED!`),
@@ -383,10 +380,6 @@ export const get1stUnmarkedIDAfterIndex = (arr: IItem[]) =>
 			: (//logGet1stUnmarkedAfter(arr)(i),
 				mapUnmarkedToIDAndFilter(arr).filter(x => x > i)[0]);
 
-// if there are marked items and no lastDone (-1) OR
-// lastDone is set (not -1) and there ar marked items after
-// return -1 (not auto-markable)
-// TODO: CRITICAL: return back an indexNum instead of an itemID
 export const findFirstMarkable = (arr: IItem[]) => (lastDone: Tindex): Tindex =>
 	isEmptyArr(arr) || !hasUnmarked(arr)
 		? (//console.log(`AA. Empty array or no unmarked items, no markable items found.`),
@@ -411,12 +404,15 @@ export const markFirstMarkableIfPossible = (arr: IItem[]) => (lastDone: Tindex):
 const boolToTFstring = (b: boolean): string =>
 	b ? 'TRUE' : 'FALSE';
 
+// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
 const printIsMarkableList = (arr: IItem[]) => (lastDone: Tindex): void =>
 	console.log(`It is ${boolToTFstring(isMarkableList(arr)(lastDone))} that this is a markable list.`)
 
+// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
 const printMarkedCount = (arr: IItem[]): void =>
 	console.log(`The # of marked items is now ${countMarked(arr)}`)
 
+// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
 export const printStatsBlock = (arr: IItem[]) => (lastDone: Tindex) => {
 	printIsMarkableList(arr)(lastDone);
 	printCMWTDdata(arr);
@@ -478,6 +474,7 @@ export const getCMWTDindex = (arr: IItem[]): Tindex =>
 			? getLastIndexOf(arr)('dotted')
 			: -1
 
+// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
 const printCMWTDdata = (arr: IItem[]): void =>
 	isNegOne(getCMWTDindex(arr))
 		? console.log(`CMWTD is not set yet.`)
@@ -493,8 +490,12 @@ const wrapPrintWithLines = (f: () => void): void =>
 	printFence());
 
 const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
-	({ currentState: 'menu', myList: appData.myList, myArchive: appData.myArchive, lastDone: appData.lastDone });
+	({ currentState: 'menu',
+	myList: appData.myList,
+	myArchive: appData.myArchive,
+	lastDone: appData.lastDone });
 
+// TODO: move string literals to top of program
 const printListHeader = (): void =>
 	console.log('AUTOFOCUS LIST');
 
@@ -508,11 +509,12 @@ const resolveSeeState = (arr: IItem[]): number =>
 
 const resolveQuitState = (appData: IAppData): IAppData =>
 	(console.log(`See you!`),
-	appData);
+		smartLogAll(appData), // TODO: COMMENT THIS OUT FOR APP PUBLISHING
+		appData);
 
-// TODO: CRITICAL: refactor createAndAddNewItemViaPrompt to use full appData,
-//    and set newestID via combined lengths of both myList AND myArchive
-// should only return IItem[], should only take arr, lastDone
+// CRITICAL
+// ISSUE: Dev clarifies native API for item creation,
+//    enforces strict usage of combined myList, myArchive count for ID generation #22
 const resolveAddState = async (appData: IAppData): Promise<IAppData> =>
 	returnAppDataBackToMenu({currentState: appData.currentState,
 		myList: await createAndAddNewItemViaPrompt(appData.myList),
@@ -530,6 +532,7 @@ const deepCopy = <T>(x: T): T =>
 	JSON.parse(JSON.stringify(x));
 
 // s === string label
+// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
 const printListData = (arr: IItem[]) => (labelText: string): void => {
 	console.log()
 	console.log(`${labelText}`)
@@ -655,17 +658,21 @@ const reviewIfPossible = (arr: IItem[]) => async (lastDone: Tindex): Promise<IIt
 		: (console.log(skippingReview),
 			arr);
 
-// refactor to remove returnAppDataBackToMenu, new promise wrapping
-// should only return IItem[], should only take arr, lastDone
 const resolveMarkStateAndReviewState = async (appData: IAppData): Promise<IAppData> => {
+	const markable = isMarkableList(appData.myList)(appData.lastDone);
+	const reviewable = isReviewableList(appData.myList)(appData.lastDone);
+	// smartLog("isMarkable")(markable)(false);
 	appData.myList = markFirstMarkableIfPossible(appData.myList)(appData.lastDone);
-	// smartLog("ACTUAL myList postMark:")(appData.myList)(true);
+	// smartLog("isReviewable")(reviewable)(false);
+	!markable && !reviewable &&
+		console.log(notMarkableOrReviewable);
+	
 	return isReviewableList(appData.myList)(appData.lastDone)
 	? ({currentState: 'menu',
 		myList: await reviewIfPossible(appData.myList)(appData.lastDone),
 		myArchive: appData.myArchive,
 		lastDone: appData.lastDone})
-	: appData;
+	: returnAppDataBackToMenu(appData);
 }
 
 const isFocusableList = (appData: IAppData): boolean =>
@@ -700,14 +707,22 @@ const markByAnswerList = (arr: IItem[]) => (lastDone: Tindex) => (answerAbbrevs:
 
 export const SIMenterMarkAndReviewState = (appData: IAppData) =>
 	(answers: TValidAnswer[]): IAppData => {
+
+	const markable = isMarkableList(appData.myList)(appData.lastDone);
+	const reviewable = isReviewableList(appData.myList)(appData.lastDone);
+	// smartLog("isMarkable")(markable)(false);
 	appData.myList = markFirstMarkableIfPossible(appData.myList)(appData.lastDone);
-	// smartLog("SIM myList postMark")(appData.myList)(true);
+	// smartLog("isReviewable")(reviewable)(false);
+	!markable && !reviewable &&
+		console.log(notMarkableOrReviewable);
+
 	return ({currentState: 'menu',
 		myList: markByAnswerList(appData.myList)(appData.lastDone)(answers),
 		myArchive: appData.myArchive,
 		lastDone: appData.lastDone});
 	};
 
+// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
 // if list is focusable, it will update the CMWTD item to be marked complete,
 // and update lastDone to be the index of the (now former) CMWTD
 // else, returns app data back as-is
@@ -723,8 +738,9 @@ export const SIMenterFocusState = (appData: IAppData): IAppData =>
 const queryUserIsThereMoreWorkLeft = async (itemText: string): Promise<string> =>
 	askOptionalYNio(`Is there work remaining to do on item '${itemText}'? [Y]es/[N]o `);
 
-// TODO: CRITICAL: change new ID to use combined myList and myArchive lengths
-//   ... it may be more pragmatic to take in appState instead of arr & lastDone
+// CRITICAL
+// ISSUE: Dev clarifies native API for item creation, enforces strict usage of combined myList,
+//    myArchive count for ID generation #22
 const duplicateLastDoneandAddToList = (arr: IItem[]) => (lastDone: Tindex): IItem[] =>
 	(arr.push(
 		{ textName: arr[lastDone].textName, status: 'unmarked', id: arr.length, isHidden: false} ),
@@ -842,7 +858,7 @@ const resolveHideAndArchiveState = async (appData: IAppData): Promise<IAppData> 
 			returnAppDataBackToMenu(appData));
 
 export const SIMresolveHideAndArchiveState = (appData: IAppData): IAppData =>
-	(console.log(`Hiding hideable items...`), // note: to log, use logDataAndPassIt()
+	(console.log(`Hiding hideable items...`), // note: to log, use smartLogAllAndPassIt()
 	moveHiddenToArchive(hideAllCompletedInAppData(appData)));
 
 export const smartLog = (label: string) => <T>(val: T) => (tabular: boolean) =>
@@ -850,13 +866,13 @@ export const smartLog = (label: string) => <T>(val: T) => (tabular: boolean) =>
 		? (console.log(`${label}:`), console.table(val))
 		: console.log(`${label}: ${val}`);
 
-export const logData = (appData: IAppData): void =>
+export const smartLogAll = (appData: IAppData): void =>
 	(smartLog("currentState")(appData.currentState)(false),
 	smartLog("myList")(appData.myList)(true),
 	smartLog("myArchive")(appData.myArchive)(true),
 	smartLog("lastDone")(appData.lastDone)(false));
 
-const logDataAndPassIt = (appData: IAppData): IAppData =>
+const smartLogAllAndPassIt = (appData: IAppData): IAppData =>
 	(smartLog("currentState")(appData.currentState)(false),
 		smartLog("myList")(appData.myList)(true),
 		smartLog("myArchive")(appData.myArchive)(true),
