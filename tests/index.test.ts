@@ -301,6 +301,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 			let myApp: IAppData = makeNewAppData(3);
 			myApp = SIMenterMarkAndReviewState(myApp)([]);
 			myApp = SIMenterFocusState(myApp);
+			// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
 			// TODO: implement test to confirm that workLeft can be set to true and a duplicate item is successfully added
       // [todoList, lastDone] = conductFocus(todoList, lastDone, {
       //   workLeft: "n"
@@ -353,7 +354,8 @@ describe("FP TESTS", () => {
 describe("FOCUS MODE INTEGRATION TESTS", () => {
   describe("Entering focus mode", () => {
     it("when there 0 items does not affect the todo list, or lastDone", () => {
-      let myApp: IAppData = createBlankData();
+			let myApp: IAppData = createBlankData();
+			// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
       //// [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft: 'y'}); // "There are no todo items."
       myApp = SIMenterFocusState(myApp);
       expect(myApp.myList.length).equals(0);
@@ -363,7 +365,8 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
 
     it("when no marked items exist, leaves todo list & cmwtd as-is", () => {
       let myApp: IAppData = makeNewAppData(1);
-      myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
       // [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft: 'y'}); // "The CMWTD has not been set."
       expect(myApp.myList.length).equals(1);
       expect(getCMWTDindex(myApp.myList)).equals(-1);
@@ -397,7 +400,8 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
   describe("Updating the CMWTD", () => {
     it("updates CMWTD from something to nothing", () => {
       let myApp: IAppData = makeNewAppData(1);
-      myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
       myApp = SIMenterFocusState(myApp); //[todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
       expect(getStatusByIndex(myApp.myList)(0)).equals("complete");
       expect(myApp.myList.length).equals(1);
@@ -408,7 +412,9 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
     // issue: Dev rewrites tests to use intended functions instead of raw mutations #287
     it("updates CMWTD from last marked item to the previous marked", () => {
       let myApp: IAppData = makeNewAppData(2);
-      myApp.myList = markAllAs(myApp.myList)("dotted");
+			// TODO: replace markAllAs with native API (stub function: reviewAllYes())
+			myApp.myList = markAllAs(myApp.myList)("dotted");
+			// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
       myApp = SIMenterFocusState(myApp); // [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
       expect(getStatusByIndex(myApp.myList)(1)).equals("complete");
       expect(myApp.myList.length).equals(2);
@@ -456,6 +462,7 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
       });
 
       step("should confirm only item has been completed", () => {
+				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
         // [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft: "n"});
         myApp = SIMenterFocusState(myApp);
         expect(getStatusByIndex(myApp.myList)(0)).equals("complete");
@@ -504,6 +511,7 @@ describe("E2E TESTS", () => {
 			step("should confirm 3rd item has been completed", () => {
 				// and that CMWTD & lastDone have been updated
 				const beforeCMWTDindex = getCMWTDindex(myApp.myList);
+				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
 				myApp = SIMenterFocusState(myApp); // conductFocus(todoList, lastDone, {workLeft: "n"});
 				expect(getStatusByIndex(myApp.myList)(2)).equals("complete");
 				expect(getCMWTDstring(myApp.myList)).equals(
@@ -578,6 +586,7 @@ describe("E2E TESTS", () => {
 	
 			// // Do the "Tidy Desk" task (last marked item / CMWTD)
 			step("should confirm 3rd item has been completed", () => {
+				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
 				//// [todoList,  lastDone] = conductFocus(todoList, lastDone, {workLeft: "n"});
 				myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // todoList = setupReview(todoList);
 				myApp = SIMenterFocusState(myApp);
@@ -627,6 +636,7 @@ describe("E2E TESTS", () => {
 	
 			// // "Do it." (Back Up)
 			step("should confirm last item has been done", () => {
+				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
 				//// [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
 				myApp = SIMenterFocusState(myApp);
 				expect(listToMarksString(myApp.myList)).equals(
@@ -639,6 +649,7 @@ describe("E2E TESTS", () => {
 			// // need to check whether you want to do any tasks more than
 			// // you want to do Voicemail. You just do it."
 			step("should confirm last marked item is done next", () => {
+				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
 				//[todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
 				myApp = SIMenterFocusState(myApp);
 				expect(listToMarksString(myApp.myList)).equals(
@@ -662,6 +673,7 @@ describe("E2E TESTS", () => {
 			// // As this is the last task on the list you do it immediately,
 			// // and then do Make Dental Appointment immediately too.
 			step("should confirm 4 specific items have been completed", () => {
+				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
 				// [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
 				// [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
 				myApp = SIMenterFocusState(myApp);
@@ -881,7 +893,8 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 
     step("should allow correct first review and focus", () => {
 			// ISSUE: Dev upgrades tests to use native APi #20
-      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y", "n", "n"]);
+			myApp = SIMenterMarkAndReviewState(myApp)(["n", "y", "n", "n"]);
+			// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
       //[todoList, lastDone ] = conductFocus(todoList, lastDone, {workLeft: 'n'});
       myApp = SIMenterFocusState(myApp);
       expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [ ]");
@@ -936,6 +949,7 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
       });
 
       step("should confirm only item has been completed", () => {
+				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
         //[todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft: "n"});
         myApp = SIMenterFocusState(myApp);
         expect(myApp.myList[1].status).equals("complete");
