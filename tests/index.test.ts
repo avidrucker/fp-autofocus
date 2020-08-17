@@ -51,9 +51,13 @@ export const FRUITS = [
 // box operator === square brackets
 const wrapStrInBoxOp = (s: string): string => "[" + s + "]";
 
+// TODO: replace markAllAs with native API implementation
+//    that uses, for example, SIMreview and answerAllYes
 const markAllAs = (arr: IItem[]) => (s: TItemStatus): IItem[] =>
   arr.map((x) => ({ id: x.id, status: s, textName: x.textName, isHidden: x.isHidden }));
 
+// ISSUE: Dev clarifies native API for item creation, enforces strict
+//    usage of combined myList, myArchive count for ID generation #22
 const makeNItemDemoArray = (nCount: number): IItem[] => {
   let todoList: IItem[] = [];
   for (let i = 0; i < nCount; i++) {
@@ -156,7 +160,6 @@ describe("UTILITY TESTS", () => {
   });
 });
 
-// note: findFirstMarkable originally called 'getFirstUnmarked'
 describe("REVIEW MODE UNIT TESTS", () => {
   describe("Finding unmarked todos", () => {
     it("when there is one item, returns the first unmarked item", () => {
@@ -332,7 +335,7 @@ describe("FP TESTS", () => {
     });
   });
 
-  describe.only("Finding of first unmarked items after a specified index", () => {
+  describe("Finding of first unmarked items after a specified index", () => {
     it("returns 1 for a list of 2 items where the first item is marked", () => {
 			let myApp: IAppData = makeNewAppData(2);
 			myApp = SIMenterMarkAndReviewState(myApp)([]);
@@ -348,7 +351,21 @@ describe("FP TESTS", () => {
 			expect(countHideable(appData.myList)).equals(0); // AFTER
 			expect(appData.myArchive.length).equals(1);
 		})
-	})
+	});
+
+	describe('addItem', () => {
+		// ISSUE: Dev resolves bug where user is erroneously
+		//    allowed to create no-header-text items #24
+		it.skip('does nothing to list if input IItem object has no header text', () => {
+			// TODO: implement test stub
+		});
+
+		// ISSUE: Dev clarifies native API for item creation, enforces strict usage of
+		//     combined myList, myArchive count for ID generation #22
+		it.skip('uses correctly incremented nextID', () => {
+			// TODO: implement test stub
+		});
+	});
 });
 
 describe("FOCUS MODE INTEGRATION TESTS", () => {
@@ -429,6 +446,8 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
       let myApp: IAppData = createBlankData();
       const aList = ["a"];
 
+			// ISSUE: Dev clarifies native API for item creation, enforces strict
+			//    usage of combined myList, myArchive count for ID generation #22
       step("should confirm 1 item has been added", () => {
         aList.forEach((x) => {
           myApp.myList = addItem(myApp.myList)(
@@ -485,6 +504,8 @@ describe("E2E TESTS", () => {
 			let myApp: IAppData = createBlankData();
 			const firstThree = ["Write report", "Check email", "Tidy desk"];
 	
+			// ISSUE: Dev clarifies native API for item creation, enforces strict
+			//    usage of combined myList, myArchive count for ID generation #22
 			step("should confirm 3 specific items have been added", () => {
 				firstThree.forEach((x) => {
 					myApp.myList = addItem(myApp.myList)(
@@ -544,6 +565,8 @@ describe("E2E TESTS", () => {
 				"Back Up",
 			];
 	
+			// ISSUE: Dev clarifies native API for item creation, enforces strict
+			//    usage of combined myList, myArchive count for ID generation #22
 			// create 10 items, and add them to the list
 			step("should confirm 10 items have been added", () => {
 				longList.forEach((x) => {
@@ -698,6 +721,8 @@ describe("E2E TESTS", () => {
 		let myApp: IAppData = createBlankData();
 		const firstThree = ["a", "b"];
 
+		// ISSUE: Dev clarifies native API for item creation, enforces strict
+			//    usage of combined myList, myArchive count for ID generation #22
 		step("should confirm 2 items have been added", () => {
 			firstThree.forEach((x) => {
 				myApp.myList = addItem(myApp.myList)(
@@ -913,6 +938,8 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
       let myApp: IAppData = createBlankData();
       const aList = ["a", "b"];
 
+			// ISSUE: Dev clarifies native API for item creation, enforces strict
+			//    usage of combined myList, myArchive count for ID generation #22
       step("should confirm 2 items has been added", () => {
         aList.forEach((x) => {
           myApp.myList = addItem(myApp.myList)(
