@@ -24,5 +24,8 @@
     "ts-node": "^8.10.2",
     "typescript": "^3.9.3"
 	},
-	"resolutions": { "**/**/lodash": "^4.17.19" }
+	"resolutions": {
+		"**/**/lodash": "^4.17.19",
+		"**/**/serialize-javascript": "^3.1.0"
+	}
 }
