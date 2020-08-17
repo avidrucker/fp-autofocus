@@ -32,7 +32,7 @@ import {
 	SIMresolveHideAndArchiveState,
 	hideAllCompletedInAppData,
 	moveHiddenToArchive,
-	logData,
+	smartLogAll,
 	UNSET_LASTDONE,
 	SIMenterMarkAndReviewState,
 	smartLog,
@@ -161,14 +161,14 @@ describe("REVIEW MODE UNIT TESTS", () => {
   describe("Finding unmarked todos", () => {
     it("when there is one item, returns the first unmarked item", () => {
       const todoList: IItem[] = makeNItemDemoArray(1);
-      const lastDone: number = -1; // TODO: fix test case to use official app API
+      const lastDone: number = -1; // ISSUE: Dev upgrades tests to use native APi #20
       expect(todoList.length).equals(1);
       expect(findFirstMarkable(todoList)(lastDone)).equals(0);
     });
 
     it("when there are multiple items, returns the first unmarked item", () => {
       const todoList: IItem[] = makeNItemDemoArray(2);
-      let lastDone: number = -1; // TODO: fix test case to use official app API
+      let lastDone: number = -1; // ISSUE: Dev upgrades tests to use native APi #20
       todoList[0].status = "complete";
       lastDone = 0;
       expect(findFirstMarkable(todoList)(lastDone)).equals(1);
@@ -181,7 +181,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
     it("returns -1 when there are no unmarked todos", () => {
       let todoList: IItem[] = makeNItemDemoArray(2);
-      let lastDone: number = -1; // TODO: fix test case to use official app API
+      let lastDone: number = -1; // ISSUE: Dev upgrades tests to use native APi #20
       todoList = markAllAs(todoList)("complete");
       lastDone = 0;
       expect(findFirstMarkable(todoList)(lastDone)).equals(-1);
@@ -189,7 +189,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
     it("when there are both marked and unmarked items, returns the unmarked item", () => {
       const todoList: IItem[] = makeNItemDemoArray(2);
-      const lastDone: number = -1; // TODO: fix test case to use official app API
+      const lastDone: number = -1; // ISSUE: Dev upgrades tests to use native APi #20
       todoList[0].status = "dotted";
       todoList[1].status = "unmarked";
       expect(getFirstReviewableIndex(todoList)(lastDone)).equals(1);
@@ -200,7 +200,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
   describe("Ready to review check", () => {
     it("determines list `[o] [o] [o]` NOT ready for review", () => {
       let todoList: IItem[] = makeNItemDemoArray(3);
-      const lastDone: number = -1; // TODO: fix test case to use official app API
+      const lastDone: number = -1; // ISSUE: Dev upgrades tests to use native APi #20
       todoList = markAllAs(todoList)("dotted");
       expect(listToMarksString(todoList)).equals("[o] [o] [o]");
       expect(isReviewableList(todoList)(lastDone)).equals(false);
@@ -209,7 +209,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
     it("determines list `[x] [x] [x]` NOT ready for review", () => {
       let todoList: IItem[] = makeNItemDemoArray(3);
-      let lastDone: number = -1; // TODO: fix test case to use official app API
+      let lastDone: number = -1; // ISSUE: Dev upgrades tests to use native APi #20
       todoList = markAllAs(todoList)("complete");
       lastDone = 0;
       expect(listToMarksString(todoList)).equals("[x] [x] [x]");
@@ -253,7 +253,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
     it("determines list `[o] [ ] [o]` NOT ready for review", () => {
       let todoList: IItem[] = makeNItemDemoArray(3);
-      const lastDone: number = -1;  // TODO: fix test case to use official app API
+      const lastDone: number = -1;  // ISSUE: Dev upgrades tests to use native APi #20
       todoList[0].status = "dotted";
       todoList[2].status = "dotted";
       expect(listToMarksString(todoList)).equals("[o] [ ] [o]");
@@ -264,7 +264,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
     // new test for fp-autofocus
     it("determines list `[o] [ ] [x]` ready for review", () => {
       let todoList: IItem[] = makeNItemDemoArray(3);
-      let lastDone: number = -1;  // TODO: fix test case to use official app API
+      let lastDone: number = -1;  // ISSUE: Dev upgrades tests to use native APi #20
       todoList[0].status = "dotted";
       todoList[2].status = "complete";
       lastDone = 2;
@@ -275,7 +275,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
     it("determines list `[o] [ ] [o] [ ]` ready for review", () => {
       let todoList: IItem[] = makeNItemDemoArray(4);
-      const lastDone: number = -1;  // TODO: fix test case to use official app API
+      const lastDone: number = -1;  // ISSUE: Dev upgrades tests to use native APi #20
       todoList[0].status = "dotted";
       todoList[2].status = "dotted";
       expect(listToMarksString(todoList)).equals("[o] [ ] [o] [ ]");
@@ -331,12 +331,11 @@ describe("FP TESTS", () => {
     });
   });
 
-  describe("Finding of first unmarked items after a specified index", () => {
+  describe.only("Finding of first unmarked items after a specified index", () => {
     it("returns 1 for a list of 2 items where the first item is marked", () => {
-			//////
 			let myApp: IAppData = makeNewAppData(2);
 			myApp = SIMenterMarkAndReviewState(myApp)([]);
-      get1stUnmarkedIndexAfter(myApp.myList)(getCMWTDindex(myApp.myList));
+      expect(get1stUnmarkedIndexAfter(myApp.myList)(getCMWTDindex(myApp.myList))).equals(1);
     });
 	});
 	
@@ -374,7 +373,7 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
   describe("Finding marked todos", () => {
     it("returns the last marked item", () => {
       let myApp: IAppData = makeNewAppData(2);
-      myApp.myList = markAllAs(myApp.myList)("dotted");
+      myApp.myList = markAllAs(myApp.myList)("dotted"); // ISSUE: Dev upgrades tests to use native APi #20
       expect(getCMWTDindex(myApp.myList)).equals(1);
     });
 
@@ -390,7 +389,7 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
 
     it("when there are both marked and unmarked items, returns the marked item", () => {
       let myApp: IAppData = makeNewAppData(2);
-      myApp.myList[0].status = "dotted"; // getStatusByIndex(myApp.myList)(0)  // TODO: fix test case to use official app API
+      myApp.myList[0].status = "dotted"; // getStatusByIndex(myApp.myList)(0)  // ISSUE: Dev upgrades tests to use native APi #20
       expect(getCMWTDindex(myApp.myList)).equals(0);
     });
   });
@@ -680,7 +679,7 @@ describe("E2E TESTS", () => {
 		});
 	});
 
-	// TODO: resolve bug where list with 2 items where
+	// confirm resolution of bug where list with 2 items where
 	//   1 item is hidden and then archived and the remaining
 	//   unmarked item cannot be marked (but should be) 
 	describe("E2E test to isolate & confirm & resolve archive bug", () => {
@@ -700,7 +699,6 @@ describe("E2E TESTS", () => {
 
 		step("should confirm that the 1st item has been marked", () => {
 			myApp = SIMenterMarkAndReviewState(myApp)([]); // "There are no todo items."
-			// original: myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
 			expect(listToMarksString(myApp.myList)).equals("[o] [ ]");
 		});
 
@@ -710,10 +708,10 @@ describe("E2E TESTS", () => {
 		});
 
 		step("should confirm 1st item has been hidden & archived", () => {
-			// logData(myApp);
+			// smartLogAll(myApp);
 			myApp = SIMresolveHideAndArchiveState(myApp);
 			expect(listToMarksString(myApp.myList)).equals("[ ]");
-			// logData(myApp);
+			// smartLogAll(myApp);
 		});
 
 		step("should confirm that both myList and myArchive have 1 item", () => {
@@ -726,7 +724,6 @@ describe("E2E TESTS", () => {
 			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
 			expect(myApp.lastDone).equals(-1);
 		});
-		//////
 	})
 });
 
@@ -811,12 +808,11 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 
     // with no dottable items returns back the items as is
     // doesn't affect the list if all items are dotted to begin with
-    it("returns list with 0 unmarked items as-is", () => {
+    it("returns already marked list with items as-is", () => {
       // make a list with one marked, one complete
       let myApp: IAppData = makeNewAppData(2);
       myApp.myList = markAllAs(myApp.myList)("dotted");
-      // myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone); // "There are no ready items."
-      myApp = SIMenterMarkAndReviewState(myApp)([]);
+      myApp = SIMenterMarkAndReviewState(myApp)([]);// "List is neither markable nor reviewable."
       expect(myApp.myList.length).equals(2);
       expect(getCMWTDstring(myApp.myList)).equals(FRUITS[1]);
     });
@@ -884,8 +880,7 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     let myApp: IAppData = makeNewAppData(5);
 
     step("should allow correct first review and focus", () => {
-			// TODO: remove all instances of the line below (myApp.myList = ...)
-			// myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
+			// ISSUE: Dev upgrades tests to use native APi #20
       myApp = SIMenterMarkAndReviewState(myApp)(["n", "y", "n", "n"]);
       //[todoList, lastDone ] = conductFocus(todoList, lastDone, {workLeft: 'n'});
       myApp = SIMenterFocusState(myApp);
