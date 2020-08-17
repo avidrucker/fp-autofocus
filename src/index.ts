@@ -60,9 +60,11 @@ const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
 	// console.log(`New item added successfully!`),
 	arr);
 
-export const addItem = (arr: IItem[]) => (newItem: IItem) =>
+// ISSUE: Dev resolves bug where user is erroneously allowed to
+//    create no-header-text items #24
+export const addItem = (arr: IItem[]) => (newItem: IItem): IItem[] =>
 	(//console.log(`Adding new item '${newItem.textName}' to list...`),
-	pushToAndReturnArr(arr)(newItem));
+		pushToAndReturnArr(arr)(newItem));
 
 // CRITICAL
 // ISSUE: Dev clarifies native API for item creation, enforces strict usage of combined myList,
