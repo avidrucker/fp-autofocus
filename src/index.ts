@@ -63,8 +63,11 @@ const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
 // ISSUE: Dev resolves bug where user is erroneously allowed to
 //    create no-header-text items #24
 export const addItem = (arr: IItem[]) => (newItem: IItem): IItem[] =>
-	(//console.log(`Adding new item '${newItem.textName}' to list...`),
-		pushToAndReturnArr(arr)(newItem));
+	newItem.textName !== ""
+	? (//console.log(`Adding new item '${newItem.textName}' to list...`),
+		pushToAndReturnArr(arr)(newItem))
+	: (console.log(`Missing item text: Please try again with text input.`),
+		arr);
 
 // CRITICAL
 // ISSUE: Dev clarifies native API for item creation, enforces strict usage of combined myList,
@@ -103,9 +106,32 @@ const stringifyConcise = (i: IItem): string =>
 const demoList: string[] = ['make coffee',
 	'go for jog', 'watch The Incredibles'];
 
-export const populateDemoList = (arr: IItem[]): IItem[] =>
-	demoList.map((x, i) => createNewItem(x)(i))
+	export const FRUITS = [
+		"apple",
+		"banana",
+		"cherry",
+		"dragonfruit",
+		"elderberry",
+		"fig",
+		"grape"
+	];
+	
+const getDemoFruitFromID = (id: number) =>
+		FRUITS[id % FRUITS.length];
 
+export const populateDemoAppByLength = (appData: IAppData) => (nLength: number): IAppData => {
+	for(let i = 0; i < nLength; i++) {
+		appData = SIMcreateAndAddNewItem(appData)(getDemoFruitFromID(i));
+	}
+	return appData;
+}
+
+export const populateDemoAppByList = (appData: IAppData) => (listIn: string[]): IAppData => {
+	listIn.forEach(x => {
+		appData = SIMcreateAndAddNewItem(appData)(x);
+	})
+	return appData;
+}
 export const stringifyList = (xs: IItem[]): string[] =>
 	xs.map(x => stringifyConcise(x)) // stringifyVerbose(x)
 
@@ -286,6 +312,9 @@ const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =
 		await getNumberFromUser(1)(menuList.length) - 1 // printAndReturn() // LOG
 	);
 
+const genNextID = (appData: IAppData): Tid =>
+  appData.myList.length + appData.myArchive.length;
+
 // CRITICAL
 // ISSUE: Dev clarifies native API for item creation,
 //    enforces strict usage of combined myList, myArchive count for ID generation #22
@@ -294,11 +323,25 @@ const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =
 // ISSUE: Dev resolves bug where user is erroneously allowed to create no-header-text items #24
 // TODO: implement with askOptional to cancel to-do input
 // TODO: implement fallback return of empty array "box" to signify nothing was created
-export const createAndAddNewItemViaPrompt = 
-	async (arr: IItem[]): Promise<IItem[]> =>
-	addItem(arr)(createNewItem(
-		await askOpenEndedIO(enterNewItem)
-		)(arr.length));
+export const createAndAddNewItemViaPromptIO = 
+	async (appData: IAppData): Promise<IAppData> => ({
+		currentState: 'menu',
+		myList: addItem(appData.myList)(createNewItem(
+			await askOpenEndedIO(enterNewItem)
+			)(genNextID(appData))),
+		myArchive: appData.myArchive,
+		lastDone: appData.lastDone
+	});
+
+export const SIMcreateAndAddNewItem = (appData: IAppData) => 
+	(textInput: string): IAppData =>
+	({
+		currentState: 'menu',
+		myList: addItem(appData.myList)(createNewItem(
+			textInput)(genNextID(appData))),
+		myArchive: appData.myArchive,
+		lastDone: appData.lastDone
+	});
 
 const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "dotted")
@@ -518,10 +561,7 @@ const resolveQuitState = (appData: IAppData): IAppData =>
 // ISSUE: Dev clarifies native API for item creation,
 //    enforces strict usage of combined myList, myArchive count for ID generation #22
 const resolveAddState = async (appData: IAppData): Promise<IAppData> =>
-	returnAppDataBackToMenu({currentState: appData.currentState,
-		myList: await createAndAddNewItemViaPrompt(appData.myList),
-		myArchive: appData.myArchive,
-		lastDone: appData.lastDone});
+	await createAndAddNewItemViaPromptIO(appData);
 
 export const getStatusByIndex = (arr: IItem[]) => (i: Tindex): string =>
 		arr[i].status;
@@ -919,8 +959,8 @@ const runProgram = (running: boolean) =>
 // TODO: validate this functions as expected with test
 export const createStarterData = () => {
 	console.log(setupDemoData)
-	let myAppDemo1: IAppData = {
-		currentState: 'menu', myList: populateDemoList([]), myArchive: [], lastDone: UNSET_LASTDONE};
+	let myAppDemo1: IAppData = createBlankData();
+	myAppDemo1 = populateDemoAppByList(myAppDemo1)(demoList);
 	const demoAnswers: TValidAnswer[] = ['n', 'y']; // ['y', 'n']; was good
 	myAppDemo1 = SIMenterMarkAndReviewState(myAppDemo1)(demoAnswers);
 	myAppDemo1 = SIMenterFocusState(myAppDemo1);
@@ -930,6 +970,13 @@ export const createStarterData = () => {
 
 export const createBlankData = (): IAppData =>
 	({ currentState: 'menu', myList: [],  myArchive: [], lastDone: UNSET_LASTDONE });
+
+export const makeNewDemoDataOfLength = (nLength: number) => {
+	let myApp = createBlankData();
+	if(nLength === 0) return myApp;
+	myApp = populateDemoAppByLength(myApp)(nLength);
+	return myApp;
+}
 
 export const main = async () => {
 	console.clear();
