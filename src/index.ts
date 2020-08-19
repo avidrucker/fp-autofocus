@@ -22,6 +22,7 @@ const wantToHideCompleted = "Do you want to hide completed items? ";
 const enterNewItem = `Please enter a to-do item: `;
 const indexAtEndOfArr = `Index is at the end of the array: returning not found...`;
 const notMarkableOrReviewable = `List is neither markable nor reviewable.`;
+const cantMarkOrReviewBecauseNoItems = "Your list is empty. First, add some items.";
 
 export const UNSET_LASTDONE: Tindex = -1;
 
@@ -75,8 +76,7 @@ const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
 	// console.log(`New item added successfully!`),
 	arr);
 
-// ISSUE: Dev resolves bug where user is erroneously allowed to
-//    create no-header-text items #24
+/** @type {Function} inbetween API which prevents newItems with invalid nameInput text from being added */
 export const addItem = (arr: IItem[]) => (newItem: IItem): IItem[] =>
 	newItem.textName !== ""
 	? (//console.log(`Adding new item '${newItem.textName}' to list...`),
@@ -84,9 +84,7 @@ export const addItem = (arr: IItem[]) => (newItem: IItem): IItem[] =>
 	: (console.log(`Missing item text: Please try again with text input.`),
 		arr);
 
-// CRITICAL
-// ISSUE: Dev clarifies native API for item creation, enforces strict usage of combined myList,
-//    myArchive count for ID generation #22
+/** @type {Function} internal API which allows for invalid nextIDs and invalid nameInputs */
 export const createNewItem = (nameInput: string) => (nextID: Tid): IItem =>
 	(//console.log(`New item '${s}' successfully created`),
 	{id: nextID,
@@ -148,7 +146,7 @@ export const populateDemoAppByList = (appData: IAppData) => (listIn: string[]): 
 	return appData;
 }
 export const stringifyList = (xs: IItem[]): string[] =>
-	xs.map(x => stringifyConcise(x)) // stringifyVerbose(x)
+	xs.map(x => stringifyConcise(x)) // ALT: stringifyVerbose(x)
 
 const isEmptyArr = <T>(arr: T[]): boolean =>
 	arr.length === 0;
@@ -255,7 +253,7 @@ export const possibleStates: IOneToManyMap<TAppState> = {
 export const menuTexts: any = {
 	'see':'View List',
 	'add':'Add New To-Do',
-	'mark':'Review & Dot List',
+	'mark':'Mark & Review List',
 	'do':'Focus on To-Do',
 	'hide': 'Hide Completed',
 	'read-about':'Read About AutoFocus',
@@ -335,7 +333,6 @@ const genNextID = (appData: IAppData): Tid =>
 //    enforces strict usage of combined myList, myArchive count for ID generation #22
 // TODO: implement ask first, return appData as is (for "unhappy path") or
 // 				appData with a new item appended
-// ISSUE: Dev resolves bug where user is erroneously allowed to create no-header-text items #24
 // TODO: implement with askOptional to cancel to-do input
 // TODO: implement fallback return of empty array "box" to signify nothing was created
 export const createAndAddNewItemViaPromptIO = 
@@ -569,12 +566,9 @@ const resolveSeeState = (arr: IItem[]): number =>
 
 const resolveQuitState = (appData: IAppData): IAppData =>
 	(console.log(`See you!`),
-		smartLogAll(appData), // TODO: COMMENT THIS OUT FOR APP PUBLISHING
+		// smartLogAll(appData), // TODO: COMMENT THIS OUT FOR APP PUBLISHING
 		appData);
 
-// CRITICAL
-// ISSUE: Dev clarifies native API for item creation,
-//    enforces strict usage of combined myList, myArchive count for ID generation #22
 const resolveAddState = async (appData: IAppData): Promise<IAppData> =>
 	await createAndAddNewItemViaPromptIO(appData);
 
@@ -587,15 +581,6 @@ export const getTextByIndex = (arr: IItem[]) => (i: Tindex): string =>
 
 const deepCopy = <T>(x: T): T =>
 	JSON.parse(JSON.stringify(x));
-
-// s === string label
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-const printListData = (arr: IItem[]) => (labelText: string): void => {
-	console.log()
-	console.log(`${labelText}`)
-	console.log(arr);
-	console.log()
-}
 
 type TAnswerState = 'quit' | 'yes' | 'no' | 'skip' | 'error';
 
@@ -697,7 +682,7 @@ const SIMcommenceReview = (arr: IItem[]) => (lastDone: Tindex) => (answerAbbrevs
 // i === current index
 const commenceReview = (arr: IItem[]) => (lastDone: Tindex) => 
 	(i: Tindex) => async (willRepeat: boolean): Promise<IItem[]> =>
-	// printListData(arr)('DUP ARRAY:'); // uncomment to see list state
+	(//smartLog('DUP ARRAY:')(arr)(true), // uncomment to see list state
 	willRepeat && !isNegOne(i) && inBounds(arr)(i)
 		? (//console.log(`Reading index ${i}... `),
 			repeatIf(handleWhich(arr)(lastDone)(i)
@@ -706,7 +691,7 @@ const commenceReview = (arr: IItem[]) => (lastDone: Tindex) =>
 					: interpretWhich(await askWhich(arr)(i)))))
 		: (//console.log(`Final array is ready to be returned:`),
 				//console.table(arr),
-				arr);
+				arr));
 	
 const reviewIfPossible = (arr: IItem[]) => async (lastDone: Tindex): Promise<IItem[]> =>
 	isReviewableList(arr)(lastDone)
@@ -716,14 +701,17 @@ const reviewIfPossible = (arr: IItem[]) => async (lastDone: Tindex): Promise<IIt
 			arr);
 
 const resolveMarkStateAndReviewState = async (appData: IAppData): Promise<IAppData> => {
+	if( appData.myList.length === 0) {
+		console.log(cantMarkOrReviewBecauseNoItems);
+		returnAppDataBackToMenu(appData)
+	};
+
 	const markable = isMarkableList(appData.myList)(appData.lastDone);
 	const reviewable = isReviewableList(appData.myList)(appData.lastDone);
-	// smartLog("isMarkable")(markable)(false);
 	appData.myList = markFirstMarkableIfPossible(appData.myList)(appData.lastDone);
-	// smartLog("isReviewable")(reviewable)(false);
-	!markable && !reviewable &&
-		console.log(notMarkableOrReviewable);
-	
+	//!markable && !reviewable &&
+	//		console.log(notMarkableOrReviewable);
+
 	return isReviewableList(appData.myList)(appData.lastDone)
 	? ({currentState: 'menu',
 		myList: await reviewIfPossible(appData.myList)(appData.lastDone),
@@ -906,7 +894,7 @@ export const moveHiddenToArchive = (appData: IAppData): IAppData =>
 // 2. if yes to 1, give the user a choice: "Do you want to hide completed items?"
 const resolveHideAndArchiveState = async (appData: IAppData): Promise<IAppData> =>
 	!hasHideableItems(appData.myList)
-	? (console.log(`No hideable items found. Focus on items to complete them first.`),
+	? (console.log(`No hideable items found. First, focus on items to complete them.`),
 		returnAppDataBackToMenu(appData))
 	: await promptUserToHide()
 		? (console.log(`Hiding hideable items...`),
@@ -915,7 +903,8 @@ const resolveHideAndArchiveState = async (appData: IAppData): Promise<IAppData> 
 			returnAppDataBackToMenu(appData));
 
 export const SIMresolveHideAndArchiveState = (appData: IAppData): IAppData =>
-	(console.log(`Hiding hideable items...`), // note: to log, use smartLogAllAndPassIt()
+	(console.log(`Hiding hideable items...`),
+	// smartLogAll(appData), // note: use smartLogAll() to log
 	moveHiddenToArchive(hideAllCompletedInAppData(appData)));
 
 export const smartLog = (label: string) => <T>(val: T) => (tabular: boolean) =>
@@ -928,13 +917,6 @@ export const smartLogAll = (appData: IAppData): void =>
 	smartLog("myList")(appData.myList)(true),
 	smartLog("myArchive")(appData.myArchive)(true),
 	smartLog("lastDone")(appData.lastDone)(false));
-
-const smartLogAllAndPassIt = (appData: IAppData): IAppData =>
-	(smartLog("currentState")(appData.currentState)(false),
-		smartLog("myList")(appData.myList)(true),
-		smartLog("myArchive")(appData.myArchive)(true),
-		smartLog("lastDone")(appData.lastDone)(false),
-		appData);
 
 const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 	appData.currentState === 'menu'
@@ -971,33 +953,32 @@ const runProgram = (running: boolean) =>
 	async (appData: IAppData): Promise<IAppData> =>
 	running === false ? appData : await enterMenu(appData) // display menu choices
 
-// TODO: validate this functions as expected with test
-export const createStarterData = () => {
-	console.log(setupDemoData)
-	let myAppDemo1: IAppData = createBlankData();
-	myAppDemo1 = populateDemoAppByList(myAppDemo1)(demoList);
+
+/** @type {Function} returns IAppData with myList `[o] [ ] [x]` */
+export const createDemoData = (): IAppData => {
+	// console.log(setupDemoData)
+	let myDemoApp: IAppData = createBlankData();
+	myDemoApp = populateDemoAppByList(myDemoApp)(demoList);
 	const demoAnswers: TValidAnswer[] = ['n', 'y']; // ['y', 'n']; was good
-	myAppDemo1 = SIMenterMarkAndReviewState(myAppDemo1)(demoAnswers);
-	myAppDemo1 = SIMenterFocusState(myAppDemo1);
-	console.log(demoDataComplete)
-	return myAppDemo1;
+	myDemoApp = SIMenterMarkAndReviewState(myDemoApp)(demoAnswers);
+	myDemoApp = SIMenterFocusState(myDemoApp);
+	// console.log(demoDataComplete)
+	return myDemoApp;
 }
 
 export const createBlankData = (): IAppData =>
 	({ currentState: 'menu', myList: [],  myArchive: [], lastDone: UNSET_LASTDONE });
 
-export const makeNewDemoDataOfLength = (nLength: number) => {
-	let myApp = createBlankData();
-	if(nLength === 0) return myApp;
-	myApp = populateDemoAppByLength(myApp)(nLength);
-	return myApp;
-}
+export const makeNewDemoDataOfLength = (nLength: number): IAppData =>
+	nLength < 1
+	? createBlankData()
+	: populateDemoAppByLength(createBlankData())(nLength);
 
 export const main = async () => {
 	console.clear();
 	greetIO();
-	await runProgram(true)(createBlankData()); // await runAdhocTests();
-	//// await runProgram(true)(createStarterData());
+	await runProgram(true)(createBlankData());
+	//// await runProgram(true)(createDemoData());
 	exit(0);
 }
 main();
