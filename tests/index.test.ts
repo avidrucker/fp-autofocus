@@ -34,6 +34,7 @@ import {
 	SIMcreateAndAddNewItem,
 	populateDemoAppByList,
 	makeNewDemoDataOfLength,
+	countHidden,
 } from "../src";
 
 // box operator === square brackets
@@ -213,7 +214,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 		});
 		
     // note: this is NOT markable and IS reviewable
-    it.skip("determines list `[x] [ ] [ ]` ready for review and NOT auto-markable", () => {
+    it("determines list `[x] [ ] [ ]` ready for review and NOT auto-markable", () => {
 			let myApp: IAppData = makeNewDemoDataOfLength(3);
       myApp = SIMenterMarkAndReviewState(myApp)([]); // mark the first item
 			myApp = SIMenterFocusState(myApp);
@@ -225,14 +226,12 @@ describe("REVIEW MODE UNIT TESTS", () => {
       expect(myApp.lastDone).equals(0);
     });
 
-    it.skip("determines list `[o] [ ] [o]` NOT ready for review", () => {
-      // let todoList: IItem[] = makeNItemDemoArray(3);
-      // const lastDone: number = -1;  // ISSUE: Dev upgrades tests to use native APi #20
-      // todoList[0].status = "dotted";
-      // todoList[2].status = "dotted";
-      // expect(listToMarksString(todoList)).equals("[o] [ ] [o]");
-      // expect(isReviewableList(todoList)(lastDone)).equals(false);
-      // expect(getFirstReviewableIndex(todoList)(lastDone)).equals(-1);
+    it("determines list `[o] [ ] [o]` NOT ready for review", () => {
+      let myApp: IAppData = makeNewDemoDataOfLength(3);
+      myApp = SIMenterMarkAndReviewState(myApp)(['n','y']);
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
+      expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+      expect(getFirstReviewableIndex(myApp.myList)(myApp.lastDone)).equals(-1);
     });
 
     // new test for fp-autofocus
@@ -258,6 +257,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
 
     it.skip("determines list `[x] [o] [ ]` ready for review", () => {
+			/////// let myApp: IAppData = makeNewDemoDataOfLength(5);
       // let myApp: IAppData = makeNewAppData(3);
 			// myApp = SIMenterMarkAndReviewState(myApp)([]);
 			// myApp = SIMenterFocusState(myApp);
@@ -268,10 +268,9 @@ describe("REVIEW MODE UNIT TESTS", () => {
     });
   });
 
-  // todoList = markFirstMarkableIfPossible(todoList)(lastDone);
-  // SIMenterFocusState(myApp)
   describe("Determining the last done index", () => {
     it.skip("gets the correct index as last done", () => {
+			/////// let myApp: IAppData = makeNewDemoDataOfLength(5);
 			// let myApp: IAppData = makeNewAppData(3);
 			// myApp = SIMenterMarkAndReviewState(myApp)([]);
 			// myApp = SIMenterFocusState(myApp);
@@ -287,6 +286,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 
   describe("Determining where reviews start", () => {
     it.skip("should return index 1 on list with `[x] [ ] [ ]` state", () => {
+			/////// let myApp: IAppData = makeNewDemoDataOfLength(5);
 			// let myApp: IAppData = makeNewAppData(3);
 			// myApp = SIMenterMarkAndReviewState(myApp)([]); // mark first markable
       // // todoList = conductAllReviews(todoList, lastDone, ['q']); // effectively not necessary for this test, but left in for demo purposes
@@ -308,6 +308,7 @@ describe("FP TESTS", () => {
 
   describe("Finding of first unmarked items after a specified index", () => {
     it.skip("returns 1 for a list of 2 items where the first item is marked", () => {
+			/////// let myApp: IAppData = makeNewDemoDataOfLength(5);
 			// let myApp: IAppData = makeNewAppData(2);
 			// myApp = SIMenterMarkAndReviewState(myApp)([]);
       // expect(get1stUnmarkedIndexAfter(myApp.myList)(getCMWTDindex(myApp.myList))).equals(1);
@@ -411,36 +412,30 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
 
   describe("Updating the CMWTD", () => {
     it("updates CMWTD from something to nothing", () => {
-      let myApp: IAppData = makeNewDemoDataOfLength(1); // ORIGINAL: let myApp: IAppData = makeNewAppData(1);
+      let myApp: IAppData = makeNewDemoDataOfLength(1);
       expect(listToMarksString(myApp.myList)).equals("[ ]");
       myApp = SIMenterMarkAndReviewState(myApp)([]); // mark first markable
       // ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
-      expect(listToMarksString(myApp.myList)).equals("[o]");
-      myApp = SIMenterFocusState(myApp); //[todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
+			expect(listToMarksString(myApp.myList)).equals("[o]");
+			myApp = SIMenterFocusState(myApp); //[todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
       expect(listToMarksString(myApp.myList)).equals("[x]");
-      expectNoCMWTD(myApp);
+			expectNoCMWTD(myApp);
 			// TODO: replace direct string comparison for expect equals with status string comparsion
       // TODO: comfirm correct lastDone update behavior in its own test
       // expect(getTextByIndex(myApp.myList)(myApp.lastDone)).equals(FRUITS[0]);
     });
 
     // issue: Dev rewrites tests to use intended functions instead of raw mutations #287
-    it.skip("updates CMWTD from last marked item to the previous marked", () => {
+    it("updates CMWTD from bottom-most marked item to 2nd bottom-most", () => {
       // // ORIGINAL: let myApp: IAppData = makeNewAppData(2);
-      // let myApp: IAppData = makeNewDemoDataOfLength(2);
+      let myApp: IAppData = makeNewDemoDataOfLength(2);
 			// // TODO: replace markAllAs with native API (stub function: reviewAllYes())
-			// myApp.myList = markAllAs(myApp.myList)("dotted");
+			myApp.myList = markAllAs(myApp.myList)("dotted");
 			// // ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
-      // myApp = SIMenterFocusState(myApp); // [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
-      // expect(getStatusByIndex(myApp.myList)(1)).equals("complete");
-
-      //// TODO: USE FOR ABOVE: expect(listToMarksString(myApp.myList)).equals("[x]");
-
-			// expect(myApp.myList.length).equals(2);
-			// // TODO: replace direct string comparison for expect equals with status string comparsion
-			// expect(getCMWTDstring(myApp.myList)).equals(FRUITS[0]);
-			// // TODO: replace direct string comparison for expect equals with status string comparsion
-      // expect(getTextByIndex(myApp.myList)(myApp.lastDone)).equals(FRUITS[1]);
+			expect(getCMWTDindex(myApp.myList)).equals(1);
+			myApp = SIMenterFocusState(myApp); // [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft:'n'});
+			expect(listToMarksString(myApp.myList)).equals("[o] [x]");
+			expect(getCMWTDindex(myApp.myList)).equals(0);
     });
   });
 
@@ -478,7 +473,6 @@ describe("FOCUS MODE INTEGRATION TESTS", () => {
 				// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
         // [todoList, lastDone] = conductFocus(todoList, lastDone, {workLeft: "n"});
         myApp = SIMenterFocusState(myApp);
-        // OLD API: expect(getStatusByIndex(myApp.myList)(0)).equals("complete");
         expect(listToMarksString(myApp.myList)).equals("[x]");
       });
 
@@ -511,13 +505,9 @@ describe("E2E TESTS", () => {
 				expect(listToMarksString(myApp.myList)).equals("[o] [o] [o]");
 			});
 	
-      // TODO: fix this next step
-      // step("should confirm that CMWTD has been updated to last item", () => {
-				// expect(getCMWTDindex(myApp.myList)).equals(
-          // // getTextByIndex(myApp.myList)(2) // TODO: replace with call to tail() and k("ID")
-          // getIndexOfID(myApp.myList)(getKeyValue<keyof IItem, IItem>(unfold(tail(myApp.myList)))("id"))
-				//);
-			//});
+      step("should confirm that CMWTD has been updated to last item", () => {
+				expect(getCMWTDindex(myApp.myList)).equals(2);
+			});
 	
 			step("should confirm 3rd item has been completed", () => {
         // NOTE: multiple item tests should take multiple tests...
@@ -729,10 +719,8 @@ describe("E2E TESTS", () => {
 		});
 
 		step("should confirm 1st item has been hidden & archived", () => {
-			// smartLogAll(myApp);
 			myApp = SIMresolveHideAndArchiveState(myApp);
 			expect(listToMarksString(myApp.myList)).equals("[ ]");
-			// smartLogAll(myApp);
 		});
 
 		step("should confirm that both myList and myArchive have 1 item", () => {
@@ -759,163 +747,151 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
     });
   });
 
-  describe.skip("Setting up review for 1 item list", () => {
+  describe("Setting up review for 1 item list", () => {
     // with no dottable items returns back the items as is
     it("returns list with marked item as-is", () => {
       // make a list with one marked item
-			// let myApp: IAppData = makeNewAppData(1);
-			// myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
-      // myApp = SIMenterMarkAndReviewState(myApp)([]); // there are no further dottable items
-      // expect(listToMarksString(myApp.myList)).equals("[o]");
+			let myApp: IAppData = makeNewDemoDataOfLength(1);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
+      myApp = SIMenterMarkAndReviewState(myApp)([]); // there are no further dottable items
+      expect(listToMarksString(myApp.myList)).equals("[o]");
     });
 
     // with only one dottable item returns a dotted item
     it("returns list with unmarked item marked", () => {
       // make a list with one unmarked item
-      // let myApp: IAppData = makeNewAppData(1);
-      // myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
-      // expect(listToMarksString(myApp.myList)).equals("[o]");
+      let myApp: IAppData = makeNewDemoDataOfLength(1);
+      myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
+      expect(listToMarksString(myApp.myList)).equals("[o]");
     });
   });
 
-	describe.skip("Setting up review for 2 item list", () => {
+	describe("Setting up review for 2 item list", () => {
 		// should NOT mark the 2nd item when the 1st item is completed because it is the last done
 		it(`returns back list of "[x] [ ]" for input "[x] [ ] (none hidden)"`, () => {
-			// let myApp: IAppData = makeNewAppData(2);
-			// myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
-			// myApp = SIMenterFocusState(myApp);
-			// expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
-			// myApp = SIMenterMarkAndReviewState(myApp)([]); // does nothing as there are no dottable items
-			// expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
-			// expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(true);
+			let myApp: IAppData = makeNewDemoDataOfLength(2);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
+			myApp = SIMenterFocusState(myApp);
+			expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // does nothing as there are no dottable items
+			expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
+			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(true);
 		});
 
 		// should mark the 2nd item when the 1st item is completed AND HIDDEN
 		it(`returns back list of "[o]" for input "[x] [ ] (1 hidden)"`, () => {
-			// let myApp: IAppData = makeNewAppData(2);
-			// myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the first markable item
-			// myApp = SIMenterFocusState(myApp);
+			let myApp: IAppData = makeNewDemoDataOfLength(2);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the first markable item
+			myApp = SIMenterFocusState(myApp);
 			
-			// expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
+			expect(listToMarksString(myApp.myList)).equals("[x] [ ]");
 			// expect(countHideable(myApp.myList)).equals(1);
 			// expect(countHidden(myApp.myList)).equals(0);
 			
-			// myApp = SIMresolveHideAndArchiveState(myApp);
+			myApp = SIMresolveHideAndArchiveState(myApp);
 			
 			// expect(countHideable(myApp.myList)).equals(0);
 			// expect(countHidden(myApp.myList)).equals(0);
 			// expect(myApp.myList.length).equals(1);
 			// expect(myApp.myArchive.length).equals(1);
 
-			// expect(isMarkableList(myApp.myList)(myApp.lastDone)).equals(true);
-			// expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
-			// myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the first markable item
-			
-			// // smartLog("post archive successful auto-marking log")(myApp.myList)(true);
+			expect(isMarkableList(myApp.myList)(myApp.lastDone)).equals(true);
+			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the first markable item
 
-      // expect(listToMarksString(myApp.myList)).equals("[o]");
+      expect(listToMarksString(myApp.myList)).equals("[o]");
 		});
 	})
 
-  describe.skip("Reviewing 2 item list", () => {
+  describe("Reviewing 2 item list", () => {
     it(`with 'y' answer results in two marked items & 2nd item cmwtd`, () => {
-      // make a list with one marked, one complete
-      // let myApp: IAppData = makeNewAppData(2);
-      // // myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      // myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
-			// expect(myApp.myList.length).equals(2);
-			// // TODO: REPLACE FRUITS STRING COMPARISON WITH STATUS STRING COMPARISON
-      // expect(getCMWTDstring(myApp.myList)).equals(FRUITS[1]);
+			// make a list with one marked, one complete
+			let myApp: IAppData = makeNewDemoDataOfLength(2);
+			myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
+			expect(listToMarksString(myApp.myList)).equals("[o] [o]");
+			expect(getCMWTDindex(myApp.myList)).equals(1);
     });
 
     // with no dottable items returns back the items as is
     // doesn't affect the list if all items are dotted to begin with
     it("returns already marked list with items as-is", () => {
-      // make a list with one marked, one complete
-      // let myApp: IAppData = makeNewAppData(2);
-      // myApp.myList = markAllAs(myApp.myList)("dotted");
-      // myApp = SIMenterMarkAndReviewState(myApp)([]);// "List is neither markable nor reviewable."
-      // expect(myApp.myList.length).equals(2);
-      // expect(getCMWTDstring(myApp.myList)).equals(FRUITS[1]);
+			// make a list with one marked, one complete
+			let myApp: IAppData = makeNewDemoDataOfLength(2);
+			myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
+			expect(listToMarksString(myApp.myList)).equals("[o] [o]");
+			expect(getCMWTDindex(myApp.myList)).equals(1);
     });
 
     // issue: Architect assess whether firstReady func is appropriate for test #288
     it("returns list as-is when first non-complete, non-archived item is marked", () => {
       // returns back first non-complete, non-archived "ready" item as marked
-      // let myApp: IAppData = makeNewAppData(2);
-      // myApp = SIMenterMarkAndReviewState(myApp)([]); // intentional double invocation
-      // myApp = SIMenterMarkAndReviewState(myApp)([]); // intentional double invocation
-      // expect(myApp.myList[0].status).equals("dotted");
-			// expect(myApp.myList[1].status).equals("unmarked");
-			// // TODO: REPLACE FRUITS STRING COMPARISON WITH STATUS STRING COMPARISON
-      // expect(getCMWTDstring(myApp.myList)).equals(FRUITS[0]);
+      let myApp: IAppData = makeNewDemoDataOfLength(2);
+      myApp = SIMenterMarkAndReviewState(myApp)([]); // intentional double invocation
+      myApp = SIMenterMarkAndReviewState(myApp)([]); // intentional double invocation
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ]");
+      expect(getCMWTDindex(myApp.myList)).equals(0);
     });
 
     // should result in the first item being dotted if it wasn't already
     it("modifies list where 1st item is not marked", () => {
-      // let myApp: IAppData = makeNewAppData(2);
-      // myApp.myList = markFirstMarkableIfPossible(myApp.myList)(myApp.lastDone);
-      // expect(myApp.myList[0].status).equals("dotted");
+      let myApp: IAppData = makeNewDemoDataOfLength(2);
+      myApp = SIMenterMarkAndReviewState(myApp)([]);
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ]");
 		});
   });
 
-  describe.skip("Conducting reviews", () => {
+  describe("Conducting reviews", () => {
     // with no dottable items returns back the items as is
-    // it("when 0 ready items, doesn't affect the todo list", () => {
-    //   let myApp: IAppData = makeNewAppData(2);
+    it("when 0 ready items, doesn't affect the todo list", () => {
+			let myApp: IAppData = makeNewDemoDataOfLength(2);
+			myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			expect(listToMarksString(myApp.myList)).equals("[x] [x]");
+      myApp = SIMenterMarkAndReviewState(myApp)([]);
+			expect(listToMarksString(myApp.myList)).equals("[x] [x]");
+    });
 
-    //   myApp.myList[0].status = "complete";
-		// 	myApp.myList[1].status = "complete";
-			
-    //   myApp = SIMenterMarkAndReviewState(myApp)([]);
+    it("should return a list of items marked `[o] [ ] [o]` for input [`n`, `y`] ", () => {
+			let myApp: IAppData = makeNewDemoDataOfLength(3);
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]); // reviews from last marked (CMWTD) if lastDone is not set
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
+    });
 
-    //   expect(myApp.myList.length).equals(2);
-    //   expectNoCMWTD(myApp);
-    // });
+    it("should return a list of items marked `[o] [ ] [ ]` for input [`n`, `n`]", () => {
+      let myApp: IAppData = makeNewDemoDataOfLength(3);
+		  myApp = SIMenterMarkAndReviewState(myApp)(["n", "n"]);
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ] [ ]");
+    });
 
-    // it("should return a list of items marked `[o] [ ] [o]` for input [`n`, `y`] ", () => {
-		// 	let myApp: IAppData = makeNewAppData(3);
-			
-    //   myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]); // reviews from last marked (CMWTD) if lastDone is not set
-
-    //   expect(getCMWTDstring(myApp.myList)).equals(FRUITS[2]);
-    //   expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
-    // });
-
-    // it("should return a list of items marked `[o] [ ] [ ]` for input [`n`, `n`]", () => {
-    //   let myApp: IAppData = makeNewAppData(3);
-    //   myApp = SIMenterMarkAndReviewState(myApp)(["n", "n"]);
-    //   expect(getCMWTDstring(myApp.myList)).equals(FRUITS[0]);
-    //   expect(listToMarksString(myApp.myList)).equals("[o] [ ] [ ]");
-    // });
-
-    // it("reviews from first unmarked if CMWTD is not set", () => {
-    //   let myApp: IAppData = makeNewAppData(3);
-    //   myApp = SIMenterMarkAndReviewState(myApp)([]);
-    //   myApp = SIMenterFocusState(myApp);
-    //   myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
-    //   expect(listToMarksString(myApp.myList)).equals("[x] [o] [ ]");
-    // });
+    it("reviews from first unmarked if CMWTD is not set", () => {
+      let myApp: IAppData = makeNewDemoDataOfLength(3);
+      myApp = SIMenterMarkAndReviewState(myApp)([]);
+			myApp = SIMenterFocusState(myApp);
+			expectNoCMWTD(myApp);
+      myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
+      expect(listToMarksString(myApp.myList)).equals("[x] [o] [ ]");
+    });
   });
 
   // issue: Dev refactors "review from lastDone if set" case into suite #290
-  describe.skip("reviews from lastDone if set", () => {
-    // let myApp: IAppData = makeNewAppData(5);
+  describe("reviews from lastDone if set", () => {
+    let myApp: IAppData = makeNewDemoDataOfLength(5);
 
-    // step("should allow correct first review and focus", () => {
-		// 	// ISSUE: Dev upgrades tests to use native APi #20
-		// 	myApp = SIMenterMarkAndReviewState(myApp)(["n", "y", "n", "n"]);
-		// 	// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
-    //   //[todoList, lastDone ] = conductFocus(todoList, lastDone, {workLeft: 'n'});
-    //   myApp = SIMenterFocusState(myApp);
-    //   expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [ ]");
-    //   expect(getCMWTDstring(myApp.myList)).equals(myApp.myList[0].textName);
-    // });
+    step("should allow correct first review and focus", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(["n", "y", "n", "n"]);
+			// ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
+      //[todoList, lastDone ] = conductFocus(todoList, lastDone, {workLeft: 'n'});
+      myApp = SIMenterFocusState(myApp);
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [ ]");
+      expect(getCMWTDstring(myApp.myList)).equals(myApp.myList[0].textName);
+    });
 
-    // step("should allow correct 2nd review", () => {
-    //   myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]);
-    //   expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [o]");
-    // });
+    step("should allow correct 2nd review", () => {
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]);
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ] [x] [ ] [o]");
+    });
   });
 
   // formerly "Second mini E2E test"
@@ -968,34 +944,33 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
   });
 
   describe("Reviewing lists with completed items", () => {
-    it.skip("works only on reviewable subset of list, compares against lastDone", () => {
-			// let myApp: IAppData = makeNewAppData(5);
-			// myApp = SIMenterMarkAndReviewState(myApp)(["n", "y","n","y",]);
-			// myApp = SIMenterFocusState(myApp);
-			// myApp = SIMenterFocusState(myApp);
-			// myApp = SIMenterFocusState(myApp);
-			// expect(listToMarksString(myApp.myList)).equals("[x] [ ] [x] [ ] [x]");
-			// myApp = SIMenterMarkAndReviewState(myApp)(["y", "y"]);
-      // expect(listToMarksString(myApp.myList)).equals("[x] [o] [x] [o] [x]");
+    it("works only on reviewable subset of list, compares against lastDone", () => {
+			let myApp: IAppData = makeNewDemoDataOfLength(5);
+			myApp = SIMenterMarkAndReviewState(myApp)(["n", "y","n","y",]);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			expect(listToMarksString(myApp.myList)).equals("[x] [ ] [x] [ ] [x]");
+			myApp = SIMenterMarkAndReviewState(myApp)(["y", "y"]);
+      expect(listToMarksString(myApp.myList)).equals("[x] [o] [x] [o] [x]");
     });
   });
 });
 
 describe("TODO LIST INTEGRATION TESTS", () => {
   describe("List to marks function", () => {
-    it.skip("should return a list of items marked `[o] [ ]` for a given list", () => {
-      // const todoList: IItem[] = makeNItemDemoArray(2);
-      // todoList[0].status = "dotted";
-      // expect(listToMarksString(todoList)).equals("[o] [ ]");
+    it("should return a list of items marked `[o] [ ]` for a given list", () => {
+			let myApp: IAppData = makeNewDemoDataOfLength(2);
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
+      expect(listToMarksString(myApp.myList)).equals("[o] [ ]");
     });
   });
 
   describe("Conducting list iteration", () => {
-    it.skip("should correctly update CMWTD for input `[n, y]` ", () => {
-      // let myApp: IAppData = makeNewAppData(3);
-      // myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]); //todoList = conductAllReviews(todoList, lastDone, ['y']);
-			// expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
-			// // smartLog("myList final test log")(myApp.myList)(true);
+    it("should correctly update CMWTD for input `[n, y]` ", () => {
+			let myApp: IAppData = makeNewDemoDataOfLength(3);
+      myApp = SIMenterMarkAndReviewState(myApp)(["n", "y"]);
+			expect(listToMarksString(myApp.myList)).equals("[o] [ ] [o]");
     });
   });
 });
