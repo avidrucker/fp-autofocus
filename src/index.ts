@@ -52,8 +52,23 @@ export interface IAppData {
 	lastDone: Tindex
 }
 
-export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' |
- 'hide' | 'read-about' | 'quit';
+export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 
+	'hide' | 'read-about' | 'quit';
+
+// https://stackoverflow.com/questions/57086672/element-implicitly-has-an-any-type-because-expression-of-type-string-cant-b
+export const getKeyValue = <U extends keyof T, T extends object>(key: U) => (obj: T) =>
+	obj[key];
+
+// note: not currently (RAM) safe for arrays
+export const head = (xs: IItem[]): IItem[] =>
+	xs.length === 0
+	? []
+	: [xs[0]];
+
+export const tail = (xs: IItem[]): IItem[] =>
+	xs.length === 0
+		? []
+		: [xs[xs.length - 1]];
 
 const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
 	(arr.push(newItem),
@@ -489,7 +504,7 @@ export const isReviewableList = (arr: IItem[]) => (lastDone: Tindex): boolean =>
 export const get1stUnmarkedIndexAfter = (arr: IItem[]) => (afterIndex: Tindex): Tindex =>
 	getIndexOfID(arr)(get1stUnmarkedIDAfterIndex(arr)(afterIndex));
 
-const getIndexOfID = (arr: IItem[] ) => (id: Tid): Tindex =>
+export const getIndexOfID = (arr: IItem[] ) => (id: Tid): Tindex =>
 	arr.map(x => x.id).indexOf(id);
 
 export const getFirstReviewableIndex = (arr: IItem[]) => (lastDone: Tindex): Tindex =>
