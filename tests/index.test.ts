@@ -729,6 +729,25 @@ describe("E2E TESTS", () => {
 			expectLastDoneUnset(myApp);
 		});
 	})
+
+	// attempt to "sort" (do in order) item list by number priority (1,2,3...N)
+	// question: are there any hitches in attempting to do this?
+	// question: what are the number of reviews needed to "sort" this list?
+	describe.only("E2E test to 'sort' a list of number items from lowest to highest (1,2,3...)", () => {
+		let myApp: IAppData = createBlankData();
+		const numberList = ["25","16","104","39","5","86","23","1","105","94","34"];
+
+		step("should confirm N items have been added", () => {
+			myApp = populateDemoAppByList(myApp)(numberList);
+			expect(myApp.myList.length).equals(numberList.length);
+			expectMarksString(myApp)("[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]");
+		});
+
+		step("should confirm that the 1st item has been marked", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
+			expectMarksString(myApp)("[o] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]");
+		});
+	})
 });
 
 describe("REVIEW MODE INTEGRATION TESTS", () => {
