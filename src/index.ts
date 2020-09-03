@@ -24,6 +24,19 @@ const indexAtEndOfArr = `Index is at the end of the array: returning not found..
 const notMarkableOrReviewable = `List is neither markable nor reviewable.`;
 const cantMarkOrReviewBecauseNoItems = "Your list is empty. First, add some items.";
 
+export const longE2Elist = [
+	"Email",
+	"In-Tray",
+	"Voicemail",
+	"Project X Report",
+	"Tidy Desk",
+	"Call Dissatisfied Customer",
+	"Make Dental Appointment",
+	"File Invoices",
+	"Discuss Project Y with Bob",
+	"Back Up",
+];
+
 export const UNSET_LASTDONE: Tindex = -1;
 
 const marks = {
@@ -994,6 +1007,13 @@ export const createDemoData = (): IAppData => {
 	return myDemoApp;
 }
 
+/** @type {Function} returns IAppData with myList `[o] [ ] [x]` */
+export const createLongE2Edata = (): IAppData => {
+	let myDemoApp: IAppData = createBlankData();
+	myDemoApp = populateDemoAppByList(myDemoApp)(longE2Elist);
+	return myDemoApp;
+}
+
 export const createBlankData = (): IAppData =>
 	({ currentState: 'menu', myList: [],  myArchive: [], lastDone: UNSET_LASTDONE });
 
@@ -1005,8 +1025,9 @@ export const makeNewDemoDataOfLength = (nLength: number): IAppData =>
 export const main = async () => {
 	console.clear();
 	greetIO();
-	await runProgram(true)(createBlankData());
+	//// await runProgram(true)(createBlankData());
 	//// await runProgram(true)(createDemoData());
+	await runProgram(true)(createLongE2Edata());
 	exit(0);
 }
 main();

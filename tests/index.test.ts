@@ -38,6 +38,7 @@ import {
 	mapUnmarkedToIDAndFilter,
 	get1stUnmarkedIndexAfter,
 	SIMfocusAMAP,
+	longE2Elist,
 } from "../src";
 
 // box operator === square brackets
@@ -537,22 +538,10 @@ describe("E2E TESTS", () => {
 	describe("Long E2E test", () => {
 		describe("should pass each successive step", () => {
 			let myApp: IAppData = createBlankData();
-			const longList = [
-				"Email",
-				"In-Tray",
-				"Voicemail",
-				"Project X Report",
-				"Tidy Desk",
-				"Call Dissatisfied Customer",
-				"Make Dental Appointment",
-				"File Invoices",
-				"Discuss Project Y with Bob",
-				"Back Up",
-			];
 
 			// create 10 items, and add them to the list
 			step("should confirm 10 items have been added", () => {
-				myApp = populateDemoAppByList(myApp)(longList);	
+				myApp = populateDemoAppByList(myApp)(longE2Elist);	
 				expect(myApp.myList.length).equals(10);
 			});
 	
