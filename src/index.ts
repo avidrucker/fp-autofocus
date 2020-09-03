@@ -393,20 +393,20 @@ const hasMarked = (arr: IItem[]): boolean =>
 
 export const isMarkableList = (arr: IItem[]) => (lastDone: Tindex): boolean =>
 	isEmptyArr(arr) || !hasUnmarked(arr) // array must have items in it // there must be unmarked items
-		? (//console.log(`1. EMPTY LIST OR NO UNMARKED!`),
+		? (// console.log(`1. EMPTY LIST OR NO UNMARKED!`),
 			false)
-			: hasMarked(arr) // there may not be any marked items already
-				? (//console.log(`2. ALREADY MARKED!`),
-					false)
-					: !isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(lastDone)
-						? (//console.log(`3. USING LAST DONE AS CMWTD, WONT MARK`),
-							false) // there must be unmarked items AFTER last done
-						: isNegOne(lastDone);
-							// UNCOMMENT TO LOG
-							// ? (//console.log(`4. WILL MARK FIRST UNMARKED!`),
-							// 	true) 
-							// : (//console.log(`5. ERROR???`),
-							// 	false);
+		: hasMarked(arr) // there may not be any marked items already
+			? (// console.log(`2. ALREADY MARKED!`),
+				false)
+			: true; // !isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(lastDone)
+				// ? (console.log(`3. USING LAST DONE AS CMWTD, WONT MARK`),
+				// 	false) // there must be unmarked items AFTER last done
+				// : true; // isNegOne(lastDone)
+				// UNCOMMENT TO LOG
+				// ? (//console.log(`4. WILL MARK FIRST UNMARKED!`),
+				// 	true) 
+				// : (//console.log(`5. ERROR???`),
+				// 	false);
 
 const countUnmarked = (arr: IItem[]): number =>
 	filterOnUnmarked(arr).length;
@@ -483,19 +483,20 @@ const isPositive = (n: number): boolean =>
 // b. there is at least one unmarked item after the last marked item
 export const isReviewableList = (arr: IItem[]) => (lastDone: Tindex): boolean =>
 	!hasUnmarked(arr)
-		? (//console.log("... A: no unmarked"),
+		? (// console.log("... A: no unmarked"),
 			false)
-		: isNegOne(getCMWTDindex(arr)) && isNegOne(lastDone) 
-			? (//console.log("... B: neither CMWTD nor lastDone exist"),
+		: isNegOne(getCMWTDindex(arr)) // && isNegOne(lastDone) 
+			? (// console.log("... B: CMWTD does not exist"),
+				// console.log("... B: neither CMWTD nor lastDone exist"),
 				false)
-			: !isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(lastDone)
-				? (//console.log(`... C. using lastDone as substitute CMWTD`),
-					true)
-				: (//console.log(`... D: no unmarked after lastDone index ${lastDone}`),
+			// : !isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(lastDone)
+			// 	? (console.log(`... C. using lastDone as substitute CMWTD`),
+			// 		true)
+				: (// console.log(`... D: no unmarked after lastDone index ${lastDone}`),
 					!isNegOne(getCMWTDindex(arr)) && listHasUnmarkedAfterIndex(arr)(getCMWTDindex(arr))
-						? (//console.log(`... E. CMWTD exists and there are unmarked after it`),
+						? (// console.log(`... E. CMWTD exists and there are unmarked after it`),
 							true)
-						: (//console.log(`... F: no unmarked after CMWTD index ${getCMWTDindex(arr)}`),
+						: (// console.log(`... F: no unmarked after CMWTD index ${getCMWTDindex(arr)}`),
 							false));
 
 export const get1stUnmarkedIndexAfter = (arr: IItem[]) => (afterIndex: Tindex): Tindex =>
@@ -707,12 +708,18 @@ const resolveMarkStateAndReviewState = async (appData: IAppData): Promise<IAppDa
 	};
 
 	const markable = isMarkableList(appData.myList)(appData.lastDone);
-	const reviewable = isReviewableList(appData.myList)(appData.lastDone);
+	
 	appData.myList = markFirstMarkableIfPossible(appData.myList)(appData.lastDone);
-	//!markable && !reviewable &&
-	//		console.log(notMarkableOrReviewable);
 
-	return isReviewableList(appData.myList)(appData.lastDone)
+	const reviewableAfterAutoMark = isReviewableList(appData.myList)(appData.lastDone);
+
+	// if not markable from the start of attemting to resolve
+	// and also not reviewable even after attempting to automark
+	// say so
+	!markable && !reviewableAfterAutoMark &&
+			console.log(notMarkableOrReviewable);
+
+	return reviewableAfterAutoMark
 	? ({currentState: 'menu',
 		myList: await reviewIfPossible(appData.myList)(appData.lastDone),
 		myArchive: appData.myArchive,
@@ -754,17 +761,29 @@ export const SIMenterMarkAndReviewState = (appData: IAppData) =>
 	(answers: TValidAnswer[]): IAppData => {
 
 	const markable = isMarkableList(appData.myList)(appData.lastDone);
-	const reviewable = isReviewableList(appData.myList)(appData.lastDone);
+	
 	// smartLog("isMarkable")(markable)(false);
+	// TODO: refactor to return appData in its entirety
+	//   instead of using the assignment operator to mutate
 	appData.myList = markFirstMarkableIfPossible(appData.myList)(appData.lastDone);
 	// smartLog("isReviewable")(reviewable)(false);
-	!markable && !reviewable &&
-		console.log(notMarkableOrReviewable);
 
-	return ({currentState: 'menu',
+	const reviewableAfterAutoMark = isReviewableList(appData.myList)(appData.lastDone);
+
+	// if not markable from the start of attemting to resolve
+	// and also not reviewable even after attempting to automark
+	// say so
+	!markable && !reviewableAfterAutoMark &&
+			console.log(notMarkableOrReviewable);
+
+	return reviewableAfterAutoMark
+		? ({currentState: 'menu',
 		myList: markByAnswerList(appData.myList)(appData.lastDone)(answers),
 		myArchive: appData.myArchive,
-		lastDone: appData.lastDone});
+		lastDone: appData.lastDone})
+		: returnAppDataBackToMenu(appData);
+		// TODO: confirm last branch activates, and prevents erroneous
+		// data modification / mutation
 	};
 
 // ISSUE: Dev implements SIMenterFocusState which takes 'y'/'n' to indicate 'workLeft' #21
@@ -778,6 +797,15 @@ export const SIMenterFocusState = (appData: IAppData): IAppData =>
 					lastDone: getCMWTDindex(appData.myList), // uses (soon-to-be) former CMWTD as the new last done 
 					myList: markCMWTDindexComplete(appData),
 					myArchive: appData.myArchive});
+
+// function that focuses repeatedly until there are no more focusable items left
+// TODO: refactor imperative stub to use functional programming style (recursive loop)
+export const SIMfocusAMAP = (appData: IAppData): IAppData => {
+	while(isFocusableList(appData)) {
+		appData = SIMenterFocusState(appData);
+	}
+	return appData;
+}
 
 // s === item textName string
 const queryUserIsThereMoreWorkLeft = async (itemText: string): Promise<string> =>
