@@ -1025,9 +1025,9 @@ export const makeNewDemoDataOfLength = (nLength: number): IAppData =>
 export const main = async () => {
 	console.clear();
 	greetIO();
-	//// await runProgram(true)(createBlankData());
+	await runProgram(true)(createBlankData());
 	//// await runProgram(true)(createDemoData());
-	await runProgram(true)(createLongE2Edata());
+	//// await runProgram(true)(createLongE2Edata());
 	exit(0);
 }
 main();
