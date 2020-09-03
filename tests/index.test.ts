@@ -37,6 +37,7 @@ import {
 	// countHidden,
 	mapUnmarkedToIDAndFilter,
 	get1stUnmarkedIndexAfter,
+	SIMfocusAMAP,
 } from "../src";
 
 // box operator === square brackets
@@ -60,6 +61,9 @@ const expectNoCMWTD = (appData: IAppData): Chai.Assertion =>
 
 const expectLastDoneUnset = (appData: IAppData): Chai.Assertion =>
   expect(appData.lastDone).equals(UNSET_LASTDONE);
+
+const expectMarkable = (appData: IAppData) => (b: boolean): Chai.Assertion =>
+	expect(isMarkableList(appData.myList)(appData.lastDone)).equals(b);
 
 const expectReviewable = (appData: IAppData) => (b: boolean): Chai.Assertion =>
 	expect(isReviewableList(appData.myList)(appData.lastDone)).equals(b);
@@ -185,7 +189,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
       const myApp: IAppData = makeNewDemoDataOfLength(3); // ISSUE: Dev upgrades tests to use native APi #20
       myApp.myList = markAllAs(myApp.myList)("dotted");
       expectMarksString(myApp)("[o] [o] [o]");
-      expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+      expectReviewable(myApp)(false);
       expectFirstReviewable(myApp)(-1); // findFirstMarkable
     });
 
@@ -194,7 +198,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
       myApp.myList = markAllAs(myApp.myList)("complete"); // ISSUE: Dev upgrades tests to use native APi #20
       myApp.lastDone = 0;
       expectMarksString(myApp)("[x] [x] [x]");
-      expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+      expectReviewable(myApp)(false);
       expectFirstReviewable(myApp)(-1);
     });
 
@@ -204,39 +208,41 @@ describe("REVIEW MODE UNIT TESTS", () => {
 			myApp = SIMenterMarkAndReviewState(myApp)(answers1);
 			myApp = SIMenterFocusState(myApp);
 			myApp = SIMenterFocusState(myApp);
-			expectReviewable(myApp)(true);
+			expectMarkable(myApp)(true);
+			expectReviewable(myApp)(false);
 			const answers2: TValidAnswer[] = ["y"];
 			myApp = SIMenterMarkAndReviewState(myApp)(answers2);
 			expectMarksString(myApp)("[x] [x] [o]"); // note: the order in which they were completed could be either 0,1 or 1,0
-      expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+      expectReviewable(myApp)(false);
     });
 
-    it("determines list `[x] [ ] [ ]` ready for review", () => {
+    it("determines list `[x] [ ] [ ]` NOT ready for review, but IS markable", () => {
       let myApp: IAppData = makeNewDemoDataOfLength(3);
       myApp = SIMenterMarkAndReviewState(myApp)([]); // mark the first item
 			myApp = SIMenterFocusState(myApp);
 			expectMarksString(myApp)("[x] [ ] [ ]");
-      expectReviewable(myApp)(true);
+			expectReviewable(myApp)(false);
+			expectMarkable(myApp)(true);
 		});
 		
-    // note: this is NOT markable and IS reviewable
-    it("determines list `[x] [ ] [ ]` ready for review and NOT auto-markable", () => {
+    // note: this IS markable and WILL BE reviewable once "auto-dotted"
+    it("determines list `[x] [ ] [ ]` markable but NOT YET ready for review", () => {
 			let myApp: IAppData = makeNewDemoDataOfLength(3);
       myApp = SIMenterMarkAndReviewState(myApp)([]); // mark the first item
 			myApp = SIMenterFocusState(myApp);
 			
-      expectMarksString(myApp)("[x] [ ] [ ]");
-      expect(isMarkableList(myApp.myList)(myApp.lastDone)).equals(false); // diff from original tests
-			expectReviewable(myApp)(true); // diff from original tests
-			expectFirstReviewable(myApp)(1);
-      expect(myApp.lastDone).equals(0);
+			expectMarksString(myApp)("[x] [ ] [ ]");
+			expectMarkable(myApp)(true);
+			expectReviewable(myApp)(false); // diff from original tests
+			// expectFirstReviewable(myApp)(-1);
+      // expect(myApp.lastDone).equals(0);
     });
 
     it("determines list `[o] [ ] [o]` NOT ready for review", () => {
       let myApp: IAppData = makeNewDemoDataOfLength(3);
       myApp = SIMenterMarkAndReviewState(myApp)(['n','y']);
 			expectMarksString(myApp)("[o] [ ] [o]");
-      expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+      expectReviewable(myApp)(false);
       expectFirstReviewable(myApp)(-1);
 		});
 		
@@ -261,7 +267,7 @@ describe("REVIEW MODE UNIT TESTS", () => {
 			let myApp: IAppData = makeNewDemoDataOfLength(3);
 			myApp = SIMenterMarkAndReviewState(myApp)([]);
 			myApp = SIMenterFocusState(myApp);
-			myApp = SIMenterMarkAndReviewState(myApp)(['y']);
+			myApp = SIMenterMarkAndReviewState(myApp)(['n']);
       expectMarksString(myApp)("[x] [o] [ ]");
       expectReviewable(myApp)(true);
       expectFirstReviewable(myApp)(2);
@@ -284,13 +290,14 @@ describe("REVIEW MODE UNIT TESTS", () => {
   });
 
   describe("Determining where reviews start", () => {
-    it("should return index 1 on list with `[x] [ ] [ ]` state", () => {
+    it("should return index -1 (not reviewable) on list with `[x] [o] [o]` state", () => {
 			let myApp: IAppData = makeNewDemoDataOfLength(3);
 			myApp = SIMenterMarkAndReviewState(myApp)([]); // mark first markable
       myApp = SIMenterFocusState(myApp);
-      myApp = SIMenterMarkAndReviewState(myApp)([]); // mark first markable // this should do nothing, since this list is not currently markable
-      expectFirstReviewable(myApp)(1);
-      expectMarksString(myApp)("[x] [ ] [ ]");
+      myApp = SIMenterMarkAndReviewState(myApp)(['y']); // mark first markable // this should do nothing, since this list is not currently markable
+      expectFirstReviewable(myApp)(-1);
+			expectMarksString(myApp)("[x] [o] [o]");
+			expectReviewable(myApp)(false);
     });
   });
 });
@@ -593,9 +600,7 @@ describe("E2E TESTS", () => {
 			});
 	
 			step("should confirm that CMWTD has been updated", () => {
-				expect(getCMWTDstring(myApp.myList)).equals(
-					getTextByIndex(myApp.myList)(2)
-				);
+				expect(getCMWTDindex(myApp.myList)).equals(2);
 			});
 	
 			// // note: this is not specifically part of the e2e flow, but
@@ -724,9 +729,108 @@ describe("E2E TESTS", () => {
 		});
 
 		step("should confirm myList isMarkable and NOT reviewable, and lastDone is unset", () => {
-			expect(isMarkableList(myApp.myList)(myApp.lastDone)).equals(true); // diff from original tests
-			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+			expectMarkable(myApp)(true);
+			expectReviewable(myApp)(false);
 			expectLastDoneUnset(myApp);
+		});
+	})
+
+	// attempt to "sort" (do in order) item list by number priority (1,2,3...N)
+	// question: are there any hitches in attempting to do this?
+	// question: what are the number of reviews needed to "sort" this list?
+	describe("E2E test to 'sort' a list of number items from lowest to highest (1,2,3...)", () => {
+		let myApp: IAppData = createBlankData();
+		const numberList = ["25","16","104","39","5","86","23","1","105","94","34"];
+
+		step("should confirm N items have been added", () => {
+			myApp = populateDemoAppByList(myApp)(numberList);
+			expect(myApp.myList.length).equals(numberList.length);
+			expectMarksString(myApp)("[ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ] [ ]");
+		});
+
+		step("should confirm that list has been marked in a descending order", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(['y','n','n','y','n','n','y','n','n','n']);
+			expectMarksString(myApp)("[o] [o] [ ] [ ] [o] [ ] [ ] [o] [ ] [ ] [ ]");
+		});
+
+		// ~~use stubbed function, focus as much as possible "AMAP"~~
+		// correction: the review algorithm needs to be redone after each
+		//   focus in order to reassess, 'Are there "higher priority" items after
+		//   the "last marked item" / "current priority item"?'
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			// myApp = SIMfocusAMAP(myApp);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			expectMarksString(myApp)("[o] [x] [ ] [ ] [x] [ ] [ ] [x] [ ] [ ] [ ]");
+		});
+
+		step("should confirm that list has been marked in a descending order", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(['n','n','n','y','n','n','n']);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			expectMarksString(myApp)("[o] [x] [ ] [ ] [x] [ ] [o] [x] [ ] [ ] [ ]");
+		});
+
+		// since the remainder of marked items now have no higher priority items
+		// in the unmarked part of the list, these marked items can be
+		// completed in order all in one swoop
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			myApp = SIMfocusAMAP(myApp);
+			expectMarksString(myApp)("[x] [x] [ ] [ ] [x] [ ] [x] [x] [ ] [ ] [ ]");
+		});
+
+		step("should confirm that the next item that will be marked will be index 2", () => {
+			expect(findFirstMarkable(myApp.myList)(myApp.lastDone)).equals(2);
+		})
+
+		step("should confirm that the list is markable", () => {
+			expectMarkable(myApp)(true);
+		})
+
+		step("auto-marking should mark the first markable item", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(['y','n','n','n','y']);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			expectMarksString(myApp)("[x] [x] [o] [o] [x] [ ] [x] [x] [ ] [ ] [o]");
+		});
+
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			// myApp = SIMfocusAMAP(myApp);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [ ] [x] [x] [ ] [ ] [x]");
+		});
+
+		step("auto-marking should mark the first markable item", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(['y','n','n']);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [o] [x] [x] [ ] [ ] [x]");
+		});
+
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			// myApp = SIMfocusAMAP(myApp);
+			myApp = SIMenterFocusState(myApp);
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [x] [x] [x] [ ] [ ] [x]");
+		});
+
+		step("auto-marking should mark the first markable item", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(['n','y']);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [x] [x] [x] [ ] [o] [x]");
+		});
+
+		// since the remainder of marked items now have no higher priority items
+		// in the unmarked part of the list, these marked items can be
+		// completed in order all in one swoop
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			myApp = SIMfocusAMAP(myApp);
+			expectMarksString(myApp)("[x] [x] [x] [x] [x] [x] [x] [x] [ ] [x] [x]");
+		});
+
+		step("auto-marking should mark the first markable item", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			myApp= SIMenterFocusState(myApp);
+			expectMarksString(myApp)("[x] [x] [x] [x] [x] [x] [x] [x] [x] [x] [x]");
 		});
 	})
 });
@@ -768,9 +872,9 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the only item
 			myApp = SIMenterFocusState(myApp);
 			expectMarksString(myApp)("[x] [ ]");
-			myApp = SIMenterMarkAndReviewState(myApp)([]); // does nothing as there are no dottable items
-			expectMarksString(myApp)("[x] [ ]");
-			expectReviewable(myApp)(true);
+			myApp = SIMenterMarkAndReviewState(myApp)([]); // 2nd item IS dottable now
+			expectMarksString(myApp)("[x] [o]");
+			expectReviewable(myApp)(false);
 		});
 
 		// should mark the 2nd item when the 1st item is completed AND HIDDEN
@@ -790,8 +894,8 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 			// expect(myApp.myList.length).equals(1);
 			// expect(myApp.myArchive.length).equals(1);
 
-			expect(isMarkableList(myApp.myList)(myApp.lastDone)).equals(true);
-			expect(isReviewableList(myApp.myList)(myApp.lastDone)).equals(false);
+			expectMarkable(myApp)(true);
+			expectReviewable(myApp)(false);
 			myApp = SIMenterMarkAndReviewState(myApp)([]); // dots the first markable item
 
       expectMarksString(myApp)("[o]");
@@ -860,13 +964,15 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
       expectMarksString(myApp)("[o] [ ] [ ]");
     });
 
-    it("reviews from first unmarked if CMWTD is not set", () => {
+		// fixed as a result of correction by algorithm author
+		// old version: "reviews from first unmarked if CMWTD is not set"
+    it("ensures 1st uncompleted item dotted, then first review is in comparison against", () => {
       let myApp: IAppData = makeNewDemoDataOfLength(3);
       myApp = SIMenterMarkAndReviewState(myApp)([]);
 			myApp = SIMenterFocusState(myApp);
 			expectNoCMWTD(myApp);
       myApp = SIMenterMarkAndReviewState(myApp)(["y"]);
-      expectMarksString(myApp)("[x] [o] [ ]");
+      expectMarksString(myApp)("[x] [o] [o]");
     });
   });
 
