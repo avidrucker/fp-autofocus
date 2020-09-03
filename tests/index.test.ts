@@ -759,9 +759,9 @@ describe("E2E TESTS", () => {
 		//   the "last marked item" / "current priority item"?'
 		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
 			// myApp = SIMfocusAMAP(myApp);
-			myApp= SIMenterFocusState(myApp);
-			myApp= SIMenterFocusState(myApp);
-			myApp= SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
 			expectMarksString(myApp)("[o] [x] [ ] [ ] [x] [ ] [ ] [x] [ ] [ ] [ ]");
 		});
 
@@ -793,7 +793,45 @@ describe("E2E TESTS", () => {
 			expectMarksString(myApp)("[x] [x] [o] [o] [x] [ ] [x] [x] [ ] [ ] [o]");
 		});
 
-		///////
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			// myApp = SIMfocusAMAP(myApp);
+			myApp = SIMenterFocusState(myApp);
+			myApp = SIMenterFocusState(myApp);
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [ ] [x] [x] [ ] [ ] [x]");
+		});
+
+		step("auto-marking should mark the first markable item", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(['y','n','n']);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [o] [x] [x] [ ] [ ] [x]");
+		});
+
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			// myApp = SIMfocusAMAP(myApp);
+			myApp = SIMenterFocusState(myApp);
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [x] [x] [x] [ ] [ ] [x]");
+		});
+
+		step("auto-marking should mark the first markable item", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)(['n','y']);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			expectMarksString(myApp)("[x] [x] [o] [x] [x] [x] [x] [x] [ ] [o] [x]");
+		});
+
+		// since the remainder of marked items now have no higher priority items
+		// in the unmarked part of the list, these marked items can be
+		// completed in order all in one swoop
+		step("should confirm highest priority items completed, save for 1st item which is still marked", () => {
+			myApp = SIMfocusAMAP(myApp);
+			expectMarksString(myApp)("[x] [x] [x] [x] [x] [x] [x] [x] [ ] [x] [x]");
+		});
+
+		step("auto-marking should mark the first markable item", () => {
+			myApp = SIMenterMarkAndReviewState(myApp)([]);
+			// "25","16","104","39","5","86","23","1","105","94","34"
+			myApp= SIMenterFocusState(myApp);
+			expectMarksString(myApp)("[x] [x] [x] [x] [x] [x] [x] [x] [x] [x] [x]");
+		});
 	})
 });
 
