@@ -596,7 +596,7 @@ export const getTextByIndex = (arr: IItem[]) => (i: Tindex): string =>
 const deepCopy = <T>(x: T): T =>
 	JSON.parse(JSON.stringify(x));
 
-type TAnswerState = 'quit' | 'yes' | 'no' | 'skip' | 'error';
+export type TAnswerState = 'quit' | 'yes' | 'no' | 'skip' | 'error';
 
 // i === index
 const askWhich = (arr: IItem[]) => async (i: Tindex): Promise<string> =>
