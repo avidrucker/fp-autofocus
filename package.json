@@ -1,6 +1,6 @@
 {
   "name": "fp-autofocus",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "index.js",
   "dependencies": {},
   "scripts": {
@@ -10,9 +10,9 @@
     "test": "mocha tests/index.test.js --exit",
     "build-and-test": "yarn build && yarn test"
   },
-  "keywords": [],
+  "keywords": ["todos", "productivity", "focus"],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "",
   "devDependencies": {
     "@types/chai": "^4.2.11",
@@ -29,5 +29,5 @@
 		"**/**/serialize-javascript": "^3.1.0"
 	},
 	"types": "src/index.d.ts",
-	"files": ["src/index.ts", "src/index.d.ts"]
+	"files": ["src/index.js","src/index.ts", "src/index.d.ts"]
 }
