@@ -1,7 +1,7 @@
 {
   "name": "fp-autofocus",
-  "version": "1.0.5",
-  "main": "index.js",
+  "version": "1.0.6",
+  "main": "src/index.js",
   "dependencies": {},
   "scripts": {
     "start": "ts-node src/index.ts",
