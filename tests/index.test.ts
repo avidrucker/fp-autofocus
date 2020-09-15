@@ -2,12 +2,6 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import {
-  createGreeting,
-  getPluralS,
-  isPluralFromCount,
-  notEmptyString,
-  isNegOne,
-  getPositiveMin,
   IItem,
   findFirstMarkable,
   TItemStatus,
@@ -18,62 +12,23 @@ import {
   getFirstReviewableIndex,
   getCMWTDindex,
   isMarkableList,
-  SIMenterFocusState,
   IAppData,
-  TValidAnswer,
   getTextByIndex,
   getStatusByIndex,
 	createBlankData,
-	createDemoData,
 	countHideable,
 	SIMresolveHideAndArchiveState,
 	hideAllCompletedInAppData,
 	moveHiddenToArchive,
 	UNSET_LASTDONE,
-	SIMenterMarkAndReviewState,
 	SIMcreateAndAddNewItem,
-	populateDemoAppByList,
-	makeNewDemoDataOfLength,
 	// countHidden,
 	mapUnmarkedToIDAndFilter,
-	get1stUnmarkedIndexAfter,
-	SIMfocusAMAP,
-	longE2Elist,
+	get1stUnmarkedIndexAfter
 } from "../src";
-
-// box operator === square brackets
-const wrapStrInBoxOp = (s: string): string => "[" + s + "]";
-
-// TODO: replace markAllAs with native API implementation
-//    that uses, for example, SIMreview and answerAllYes
-const markAllAs = (arr: IItem[]) => (s: TItemStatus): IItem[] =>
-  arr.map((x) => ({ id: x.id, status: s, textName: x.textName, isHidden: x.isHidden }));
-
-const listToMarksString = (arr: IItem[]) =>
-  arr
-    .map((x) => x.status)
-    .map((x) => statusToMark(x))
-    .map((x) => wrapStrInBoxOp(x))
-    .join(" ");
-
-// test utility functions
-const expectNoCMWTD = (appData: IAppData): Chai.Assertion =>
-  expect(getCMWTDindex(appData.myList)).equals(-1);
-
-const expectLastDoneUnset = (appData: IAppData): Chai.Assertion =>
-  expect(appData.lastDone).equals(UNSET_LASTDONE);
-
-const expectMarkable = (appData: IAppData) => (b: boolean): Chai.Assertion =>
-	expect(isMarkableList(appData.myList)(appData.lastDone)).equals(b);
-
-const expectReviewable = (appData: IAppData) => (b: boolean): Chai.Assertion =>
-	expect(isReviewableList(appData.myList)(appData.lastDone)).equals(b);
-
-const expectMarksString = (appData: IAppData) => (s: string): Chai.Assertion =>
-	expect(listToMarksString(appData.myList)).equals(s);
-
-const expectFirstReviewable = (appData: IAppData) => (n: number): Chai.Assertion =>
-	expect(getFirstReviewableIndex(appData.myList)(appData.lastDone)).equals(n);
+import { createGreeting, getPluralS, isPluralFromCount, notEmptyString, isNegOne, getPositiveMin } from "../src/fp-utility";
+import { makeNewDemoDataOfLength, SIMenterFocusState, SIMenterMarkAndReviewState, expectFirstReviewable, markAllAs, expectMarksString, expectReviewable, expectMarkable, createDemoData, expectNoCMWTD, expectLastDoneUnset, populateDemoAppByList, longE2Elist, listToMarksString, SIMfocusAMAP } from "./af-test-utils";
+import { TValidAnswer } from "../src/console";
 
 describe("MAIN TESTS", () => {
   // smoke test
