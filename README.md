@@ -9,3 +9,4 @@ A (mostly) functional programming style to-do list management system codebase. T
 - [ ] Enable "showing X of Y items" when printing list with hidden/archived items `stringifyShowingXofY(x)(y)`
 - [ ] Refactor code base to remove "place oriented programming" (ie. remove archive, replace w/ boolean flags)
 - [ ] Implement export all items to CSV `serializeToCSV(appData)`
+- [ ] Export command line app to "autofocus-cla" repo which uses "fp-autofocus" core as dependency
