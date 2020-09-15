@@ -5,7 +5,8 @@
   "dependencies": {},
   "scripts": {
     "start": "ts-node src/index.ts",
-    "start2": "tsc && node src/index.js",
+		"start2": "tsc && node src/index.js",
+		"start-cla": "tsc && ts-node src/console.ts",
     "build": "tsc",
     "test": "mocha tests/index.test.js --exit",
     "build-and-test": "yarn build && yarn test"
@@ -29,5 +30,8 @@
 		"**/**/serialize-javascript": "^3.1.0"
 	},
 	"types": "src/index.d.ts",
-	"files": ["src/index.js","src/index.ts", "src/index.d.ts"]
+	"files": ["src/index.js","src/index.ts", "src/index.d.ts"],
+	"comments": {
+		"start-cla":"placeholder script to build entire project & run command line app"
+	}
 }
