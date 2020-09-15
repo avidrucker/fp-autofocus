@@ -12,37 +12,12 @@ export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	myArchive: appData.myArchive,
 	lastDone: appData.lastDone });
 
-// https://stackoverflow.com/questions/57086672/element-implicitly-has-an-any-type-because-expression-of-type-string-cant-b
-// export const getKeyValue = <U extends keyof T, T extends object>(key: U) => (obj: T) =>
-// 	obj[key];
-
-// note: not currently (RAM) safe for arrays
-// export const head = (xs: IItem[]): IItem[] =>
-// 	xs.length === 0
-// 	? []
-// 	: [xs[0]];
-
-// export const tail = (xs: IItem[]): IItem[] =>
-// 	xs.length === 0
-// 		? []
-// 		: [xs[xs.length - 1]];
-
-// a kind of pretty print
-// , ${i.isHidden ? 'hidden' : 'not hidden'}
-// const stringifyVerbose = (i: IItem): string =>
-// 	`Item: '${i.textName}', status: ${i.status}`;
-
-
-
-// TODO: relocate to console.ts
 export const printList = (nameTexts: string[]): void =>
 	nameTexts.forEach(x => console.log(x));
 
-// TODO: relocate to console.ts
 export const printEmptyList = (): void =>
 	console.log(emptyList);
 
-// TODO: relocate to console.ts
 export const printListOrStatus = (xs: string[]): void =>
 	isEmptyArr(xs)
 		? printEmptyList()
@@ -76,31 +51,28 @@ export const askOpenEndedIO = (q: string) =>
 // 		})
 // 	});
 
-const askOptionalYNio = (q: string): Promise<string> =>
+const askOptionalYNio = (question: string): Promise<string> =>
 	new Promise<string>((resolve) => {
-		rl.question(q, (answer: string) => { 
+		rl.question(question, (answer: string) => { 
 			answer.toLowerCase() === 'q'
 				? resolve('q')
 				: answer.toLowerCase() === 'y'
 					? resolve('y')
 					: answer.toLowerCase() === 'n'
 						? resolve('n')
-						: resolve(askOptionalYNio(q));
+						: resolve(askOptionalYNio(question));
 		})
 	});
 
-const printMenuItem = (x: TAppState) => (i: Tindex): void =>
+const printMenuItemAtIndex = (x: TAppState) => (i: Tindex): void =>
 	console.log(`${i+1}: ${x}`)
 
-const printMenuHeader = (): void =>
-	console.log('MAIN MENU');
-
 export const printMenu = (menuList: TAppState[]) => (menuTexts: any): (() => void) =>
-	() => (printMenuHeader(),
-	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItem(x)(i)));
+	() => (console.log('MAIN MENU'),
+	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItemAtIndex(x)(i)));
 
 const inRangeInclusive = (lower: number) => (upper: number) => (x: number): boolean =>
-	x >= lower && x <= upper
+	x >= lower && x <= upper;
 
 const createNumRangePrompt = (a: number) => (b: number): string =>
 	`Please choose a number from ${a} to ${b}: `;
@@ -118,6 +90,9 @@ export const getNumberFromUser = (first: number) => (last: number): Promise<numb
 // export const printBlankLine = (): void =>
 // 	console.log();
 
+////////////////////////////////////////////
+// STATE TRANSITION LOGIC
+////////////////////////////////////////////
 export interface IOneToManyMap<T> {
 	[key: string]: T[];
 }
@@ -145,8 +120,6 @@ export const menuTexts: any = {
 	'quit': 'Exit Program'
 };
 
-
-// STATE TRANSITION LOGIC
 export const transitionalble = (current: TAppState) => (next: TAppState) => (states: any): boolean =>
 	existsInArr(Object.keys(states))(current) && 
 		existsInArr(possibleStates[current])(next);
@@ -316,33 +289,6 @@ const handleWhich = (arr: IItem[]) => (lastDone: Tindex) => (i: Tindex) =>
 const repeatIf = async (x: IListRepeater): Promise<IItem[]> =>
 	await commenceReview(x.arr)(x.lastDone)(x.currentIndex)(x.willRepeat);
 
-// TODO: refactor to note use state mutation
-// TODO: refactor to not use forloop and instead use fp
-// export const SIMcommenceReview = (arr: IItem[]) => (lastDone: Tindex) => (answerAbbrevs: TValidAnswer[]): IItem[] => {
-// 	let answerIndex = 0;
-// 	let doneReviewing = false;
-// 	for(let i = getFirstReviewableIndex(arr)(lastDone);
-// 		i < arr.length && !isNegOne(i) && inBounds(arr)(i) && !doneReviewing; i++ ) {
-// 		// console.log(`Reviewing index ${i}...`)
-// 		doneReviewing = answerAbbrevs[answerIndex] === 'q';
-// 		doneReviewing
-// 			? (// console.log(`Quitting review early...`),
-// 				doNothing())
-// 			: isComplete(arr[i])
-// 				? (// console.log(`Skipping completed item at index ${i}`),
-// 					doNothing())
-// 				: !doneReviewing && answerAbbrevs[answerIndex] === 'y'
-// 					? (//console.log(`Marking item at index ${i} because YES answer`),
-// 						(arr = dotIndex(arr)(i)), // WARNING: state mutation
-// 						answerIndex++)
-// 					: (//console.log(`Skipping item at index ${i} because NO answer`),
-// 						answerIndex++)
-// 	}
-// 	return arr;
-// }
-
-
-
 // TODO: refactor spagetti code
 // i === current index
 const commenceReview = (arr: IItem[]) => (lastDone: Tindex) => 
@@ -407,44 +353,9 @@ const displayCMWTDandWaitForUser = async (appData: IAppData): Promise<IAppData> 
 		myArchive: appData.myArchive
 	});
 
-// export type TValidAnswer = 'y' | 'n' | 'q';
-
-// "reviewByNumbers", modeled after reviewIfPossible function
-// export const markByAnswerList = (arr: IItem[]) => (lastDone: Tindex) => (answerAbbrevs: TValidAnswer[]): IItem[] =>
-// 	isReviewableList(arr)(lastDone)
-// 	? (//console.log(`Commencing review from index ${getFirstReviewableIndex(arr)(lastDone)}...`),
-// 		SIMcommenceReview(deepCopy(arr))(lastDone)(answerAbbrevs))
-// 	: (console.log(skippingReview),
-// 		arr);
-
-// export const SIMenterMarkAndReviewState = (appData: IAppData) =>
-// 	(answers: TValidAnswer[]): IAppData => {
-
-// 	const markable = isMarkableList(appData.myList)(appData.lastDone);
-	
-// 	// smartLog("isMarkable")(markable)(false);
-// 	// TODO: refactor to return appData in its entirety
-// 	//   instead of using the assignment operator to mutate
-// 	appData.myList = markFirstMarkableIfPossible(appData.myList)(appData.lastDone);
-// 	// smartLog("isReviewable")(reviewable)(false);
-
-// 	const reviewableAfterAutoMark = isReviewableList(appData.myList)(appData.lastDone);
-
-// 	// if not markable from the start of attemting to resolve
-// 	// and also not reviewable even after attempting to automark
-// 	// say so
-// 	!markable && !reviewableAfterAutoMark &&
-// 			console.log(notMarkableOrReviewable);
-
-// 	return reviewableAfterAutoMark
-// 		? ({currentState: 'menu',
-// 		myList: markByAnswerList(appData.myList)(appData.lastDone)(answers),
-// 		myArchive: appData.myArchive,
-// 		lastDone: appData.lastDone})
-// 		: returnAppDataBackToMenu(appData);
-// 		// TODO: confirm last branch activates, and prevents erroneous
-// 		// data modification / mutation
-// 	};
+// TODO: assess whether this is a "leaky abstraction" (?) in the
+//    sense of whether this is needed only for console, testing, or core, & rescope accordingly
+export type TValidAnswer = 'y' | 'n' | 'q';
 
 // CRITICAL: TODO: add IO suffix to signal this function requires user interaction/input
 // s === item textName string
