@@ -4,7 +4,7 @@ import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy } from "./f
 import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, cantFocus, wantToHideCompleted } from "./af-strings";
 import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNewItem, IItem, TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, isFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, hasHideableItems, moveHiddenToArchive, hideAllCompletedInAppData } from ".";
 
-// import { exit } from 'process';
+import { exit } from 'process';
 
 export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
@@ -550,7 +550,7 @@ export const main = async () => {
 	await runProgram(true)(createBlankData());
 	//// await runProgram(true)(createDemoData());
 	//// await runProgram(true)(createLongE2Edata());
-	// exit(0);
+	exit(0);
 }
 
 main();
