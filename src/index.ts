@@ -36,7 +36,7 @@ export interface IAppData {
 }
 
 export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 
-	'hide' | 'read-about' | 'quit';
+	'hide' | 'save' | 'read-about' | 'quit';
 
 export const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
 	(arr.push(newItem),
@@ -79,29 +79,11 @@ export const statusToMark = (x: TItemStatus): string =>
 export const stringifyConcise = (i: IItem): string =>
 	`[${marks[i.status]}] ${i.textName}`
 
-
-
-
 export const stringifyList = (xs: IItem[]): string[] =>
 	xs.map(x => stringifyConcise(x)) // ALT: stringifyVerbose(x)
 
-
-
-
 export const genNextID = (appData: IAppData): Tid =>
   appData.myList.length + appData.myArchive.length;
-
-// TODO: assess whether SIM prefix is appropriate for usage within app,
-//    tests, console, PWA, etc. & rename as needed
-export const SIMcreateAndAddNewItem = (appData: IAppData) => 
-	(textInput: string): IAppData =>
-	({
-		currentState: 'menu',
-		myList: addItem(appData.myList)(createNewItem(
-			textInput)(genNextID(appData))),
-		myArchive: appData.myArchive,
-		lastDone: appData.lastDone
-	});
 
 export const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "dotted")

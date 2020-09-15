@@ -1,6 +1,9 @@
 // function that focuses repeatedly until there are no more focusable items left
 
-import { IAppData, isFocusableList, getCMWTDindex, markCMWTDindexComplete, createBlankData, SIMcreateAndAddNewItem, IItem, TItemStatus, statusToMark, isMarkableList, isReviewableList, getFirstReviewableIndex, markFirstMarkableIfPossible, inBounds, isComplete, dotIndex, Tindex, UNSET_LASTDONE } from "../src";
+import { IAppData, isFocusableList, getCMWTDindex, markCMWTDindexComplete, 
+	createBlankData, IItem, TItemStatus, statusToMark, isMarkableList, isReviewableList, 
+	getFirstReviewableIndex, markFirstMarkableIfPossible, inBounds, isComplete, dotIndex, 
+	Tindex, UNSET_LASTDONE, addItem, createNewItem, genNextID } from "../src";
 import { returnAppDataBackToMenu, TValidAnswer } from "../src/console";
 import { expect } from "chai";
 import { notMarkableOrReviewable, skippingReview } from "../src/af-strings";
@@ -20,9 +23,21 @@ export const FRUITS = [
 	"fig",
 	"grape"
 ];
-	
+
 export const getDemoFruitFromID = (id: number) =>
 	FRUITS[id % FRUITS.length];
+
+// TODO: assess whether SIM prefix is appropriate for usage within app,
+//    tests, console, PWA, etc. & rename as needed
+export const SIMcreateAndAddNewItem = (appData: IAppData) => 
+	(textInput: string): IAppData =>
+	({
+		currentState: 'menu',
+		myList: addItem(appData.myList)(createNewItem(
+			textInput)(genNextID(appData))),
+		myArchive: appData.myArchive,
+		lastDone: appData.lastDone
+	});
 
 export const populateDemoAppByLength = (appData: IAppData) => (nLength: number): IAppData => {
 	for(let i = 0; i < nLength; i++) {

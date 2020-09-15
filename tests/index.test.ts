@@ -1,33 +1,18 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import {
-  IItem,
-  findFirstMarkable,
-  TItemStatus,
-  getCMWTDstring,
-  statusToMark,
-  isReviewableList,
-  markFirstMarkableIfPossible,
-  getFirstReviewableIndex,
-  getCMWTDindex,
-  isMarkableList,
-  IAppData,
-  getTextByIndex,
-  getStatusByIndex,
-	createBlankData,
-	countHideable,
-	SIMresolveHideAndArchiveState,
-	hideAllCompletedInAppData,
-	moveHiddenToArchive,
-	UNSET_LASTDONE,
-	SIMcreateAndAddNewItem,
-	// countHidden,
-	mapUnmarkedToIDAndFilter,
-	get1stUnmarkedIndexAfter
+import { IItem, findFirstMarkable, TItemStatus, getCMWTDstring, statusToMark, isReviewableList,
+	markFirstMarkableIfPossible, getFirstReviewableIndex, getCMWTDindex, isMarkableList, IAppData,
+	getTextByIndex, getStatusByIndex, createBlankData, countHideable, SIMresolveHideAndArchiveState,
+	hideAllCompletedInAppData, moveHiddenToArchive, UNSET_LASTDONE, countHidden,
+	mapUnmarkedToIDAndFilter, get1stUnmarkedIndexAfter
 } from "../src";
-import { createGreeting, getPluralS, isPluralFromCount, notEmptyString, isNegOne, getPositiveMin } from "../src/fp-utility";
-import { makeNewDemoDataOfLength, SIMenterFocusState, SIMenterMarkAndReviewState, expectFirstReviewable, markAllAs, expectMarksString, expectReviewable, expectMarkable, createDemoData, expectNoCMWTD, expectLastDoneUnset, populateDemoAppByList, longE2Elist, listToMarksString, SIMfocusAMAP } from "./af-test-utils";
+import { createGreeting, getPluralS, isPluralFromCount, notEmptyString, isNegOne, 
+	getPositiveMin } from "../src/fp-utility";
+import { makeNewDemoDataOfLength, SIMenterFocusState, SIMenterMarkAndReviewState, 
+	expectFirstReviewable, markAllAs, expectMarksString, expectReviewable, expectMarkable, 
+	createDemoData, expectNoCMWTD, expectLastDoneUnset, populateDemoAppByList, longE2Elist, 
+	listToMarksString, SIMfocusAMAP, SIMcreateAndAddNewItem } from "./af-test-utils";
 import { TValidAnswer } from "../src/console";
 
 describe("MAIN TESTS", () => {
