@@ -1,10 +1,17 @@
 const readline = require('readline')
 
 import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy } from "./fp-utility";
-import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, cantFocus, wantToHideCompleted } from "./af-strings";
-import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNewItem, IItem, TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, isFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, hasHideableItems, moveHiddenToArchive, hideAllCompletedInAppData } from ".";
+import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, 
+	cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, 
+	cantFocus, wantToHideCompleted } from "./af-strings";
+import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNewItem, IItem, 
+	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
+	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
+	isFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
+	hasHideableItems, moveHiddenToArchive, hideAllCompletedInAppData } from ".";
 
 import { exit } from 'process';
+import { serializeAppDataToCSV } from "./af-save-load";
 
 export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
@@ -99,12 +106,13 @@ export interface IOneToManyMap<T> {
 
 // Map<TAppState, TAppState[]>
 export const possibleStates: IOneToManyMap<TAppState> = {
-	'menu': ['see', 'add', 'mark', 'do', 'hide', 'read-about'],
+	'menu': ['see', 'add', 'mark', 'do', 'hide', 'save', 'read-about'],
 	'see': ['menu'],
 	'add': ['menu'],
 	'mark': ['menu'],
 	'do': ['menu'],
 	'hide': ['menu'],
+	'save': ['menu'],
 	'read-about': ['menu'],
 	'quit': []
 }
@@ -116,6 +124,7 @@ export const menuTexts: any = {
 	'mark':'Mark & Review List',
 	'do':'Focus on To-Do',
 	'hide': 'Hide Completed',
+	'save': 'Save to CSV',
 	'read-about':'Read About AutoFocus',
 	'quit': 'Exit Program'
 };
@@ -131,7 +140,7 @@ export const sayState = (state: TAppState): void =>
 	console.log(`Current state is now: '${state}'.`);
 
 export const menuList: TAppState[] = 
-	['see', 'add', 'mark', 'do', 'hide', 'read-about', 'quit'];
+	['see', 'add', 'mark', 'do', 'hide', 'save', 'read-about', 'quit'];
 
 export const promptUserAtMenuToChangeState = 
 	async (s: TAppState): Promise<TAppState> =>
@@ -420,6 +429,18 @@ const resolveHideAndArchiveState = async (appData: IAppData): Promise<IAppData> 
 		: (//console.log(`Deciding not to hide...`),
 			returnAppDataBackToMenu(appData));
 
+const hasSomethingToSave = (appData: IAppData): boolean =>
+	appData.myList.length > 0;
+
+const resolveSaveState = async (appData: IAppData): Promise<IAppData> =>
+	!hasSomethingToSave(appData)
+		? (console.log(`There is no list data yet to save.`),
+			returnAppDataBackToMenu(appData))
+		: (console.log(`Saving to local directory...`),
+			serializeAppDataToCSV(appData),
+			returnAppDataBackToMenu(appData)
+		)
+
 const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 	appData.currentState === 'menu'
 		? resolveMenuState(appData)
@@ -431,9 +452,11 @@ const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 					? resolveDoState(appData)
 					: appData.currentState === 'hide'
 						? resolveHideAndArchiveState(appData)
-						: resolveMutatingErrorState(appData);
+						: appData.currentState === 'save'
+							? resolveSaveState(appData)
+							: resolveMutatingErrorState(appData);
 
-const mutatorStates: TAppState[] = ['menu', 'add', 'mark', 'do', 'hide'];
+const mutatorStates: TAppState[] = ['menu', 'add', 'mark', 'do', 'hide', 'save'];
 
 // s === state, mss === mutator states
 const stateIsMutator = (s: TAppState) => (mss: TAppState[]) =>
