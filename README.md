@@ -3,6 +3,7 @@
 A (mostly) functional programming style to-do list management system codebase. This code can be used as-is in the terminal as a command line app, or as the business logic to drive a different front-end, such as a web app.
 
 ## in-progress
+(scatch pad issues, to-do's, etc.)
 
 - [x] Rebuild prior command line app functionality
 - [ ] Migrate new app data level & utility functions from PWA app WIP back to fp-autofocus "core"
@@ -10,4 +11,4 @@ A (mostly) functional programming style to-do list management system codebase. T
 - [ ] Refactor code base to remove "place oriented programming" (ie. remove archive, replace w/ boolean flags)
 - [ ] Implement export all items to CSV `serializeToCSV(appData)`
 - [ ] Export command line app to "autofocus-cla" repo which uses "fp-autofocus" core as dependency
-- [ ] Reimplement unit, integration, e2e tests
+- [x] Reimplement (re-enable) unit, integration, e2e tests
