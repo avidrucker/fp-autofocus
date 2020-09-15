@@ -13,6 +13,7 @@ export const marks = {
 	complete: 'x'
 };
 
+// TODO: rename Tid, Tindex to TId, TIndex
 export type Tid = number;
 export type Tindex = number;
 
@@ -105,8 +106,10 @@ export const SIMcreateAndAddNewItem = (appData: IAppData) =>
 export const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "dotted")
 
-// TODO: refactor to not mutate state, and instead
-// return a newly constructed array of items
+
+// TODO: refactor to take in appData (see code exported from PWA)
+// ~~TODO: refactor to not mutate state, and instead
+// return a newly constructed array of items~~
 export const dotIndex = (arr: IItem[]) => (i: Tindex): IItem[] =>
 	arr.map((x, current) => (current === i
 		? (// console.log(`Modifying item at index ${i} to be dotted...`),
@@ -281,7 +284,8 @@ export const inBounds = (arr: IItem[]) => (i: Tindex) =>
 		// : (//console.log(`... going out of bounds.`),
 		// 	false);
 
-export const isComplete = (x: IItem) =>
+// TODO: rename function to "isCompletedItem" to clarify inputs/outputs
+export const isComplete = (x: IItem): boolean =>
 	x.status === 'complete';
 
 // CRITICAL: TODO: rename function to clarify "app data contains focusable list",
@@ -294,8 +298,6 @@ export const markCMWTDindexComplete = (appData: IAppData): IItem[] =>
 	(//console.log(`Marking as complete index ${getCMWTDindex(appData.myList)}...`),
 	markComplete(appData.myList)(getCMWTDindex(appData.myList)))
 
-
-
 // CRITICAL
 // ISSUE: Dev clarifies native API for item creation, enforces strict usage of combined myList,
 //    myArchive count for ID generation #22
@@ -303,8 +305,6 @@ export const duplicateLastDoneandAddToList = (arr: IItem[]) => (lastDone: Tindex
 	(arr.push(
 		{ textName: arr[lastDone].textName, status: 'unmarked', id: arr.length, isHidden: false} ),
 		arr);
-
-
 
 export const isHideable = (x: IItem): boolean =>
 	x.status === 'complete' && x.isHidden === false;
