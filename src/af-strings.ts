@@ -18,3 +18,5 @@ export const indexAtEndOfArr = `Index is at the end of the array: returning not 
 export const notMarkableOrReviewable = `List is neither markable nor reviewable.`;
 export const cantMarkOrReviewBecauseNoItems = "Your list is empty. First, add some items.";
 export const noHideableFound = `No hideable items found. First, focus on items to complete them.`;
+export const confirmHiding = `Hiding hideable items...`;
+export const nothingToSave = `There is no list data yet to save.`;
