@@ -8,7 +8,7 @@ import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNew
 	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
 	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
 	isFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
-	hasHideableItems, hideAllCompletedInAppData, UNSET_LASTDONE, hideAllCompleted, countHidden, hasAllHidden, unhideAllCompletedInAppData, toggleHideAllInAppData } from ".";
+	hasHideableItems, hideAllCompletedInAppData, UNSET_LASTDONE, hideAllCompleted, countHidden, hasAllHidden, showAllCompletedInAppData, toggleHideAllInAppData } from ".";
 
 import { exit } from 'process';
 import { returnJSONblogFromFile } from './af-load';
@@ -401,7 +401,7 @@ const resolveToggleHideState = (appData: IAppData): IAppData =>
 	// hasHideableItems(appData.myList)
 	// 	? hideAllCompletedInAppData(appData)
 	// 	: hasAllHidden(appData)
-	// 		? unhideAllCompletedInAppData(appData)
+	// 		? showAllCompletedInAppData(appData)
 	// 		: (console.log(noHideableFound),
 	// 			returnAppDataBackToMenu(appData));
 

@@ -1,7 +1,7 @@
 "use strict";
 
 import { existsInArr, isEmptyArr, isNegOne, isNeg, deepCopy, pushToAndReturnArr } from "./fp-utility";
-import { automarkingFirstMarkable } from "./af-strings";
+import { automarkingFirstMarkable, nothingToToggleHide } from "./af-strings";
 import { returnAppDataBackToMenu } from "./console";
 
 export type TItemStatus =  'unmarked' | 'dotted' | 'complete';
@@ -313,14 +313,14 @@ export const countHidden = (xs: IItem[]): number =>
 export const countCompleted = (xs: IItem[]): number =>
 	xs.filter(x => x.status === 'complete').length;
 
-// TODO: refactor hideItem and unhideItem to be one func which takes one bool input `setStatus()`
+// TODO: refactor hideItem and showItem to be one func which takes one bool input `setStatus()`
 export const hideItem = (i: IItem): IItem =>
 	({id: i.id, status: i.status, textName: i.textName, isHidden: 1});
 
-export const unhideItem = (i: IItem): IItem =>
+export const showItem = (i: IItem): IItem =>
 	({id: i.id, status: i.status, textName: i.textName, isHidden: 0});
 
-// TODO: refactor hideAllCompleted and unhideAllCompleted to be one func
+// TODO: refactor hideAllCompleted and showAllCompleted to be one func
 //   which takes a comparison condition and call to setStatus()
 export const hideAllCompleted = (xs: IItem[]): IItem[] => {
 	xs = xs.map(x => !x.isHidden && x.status === 'complete'
@@ -329,44 +329,38 @@ export const hideAllCompleted = (xs: IItem[]): IItem[] => {
 	return xs;
 };
 
-export const unhideAllCompleted = (xs: IItem[]): IItem[] => {
+export const showAllCompleted = (xs: IItem[]): IItem[] => {
 	xs = xs.map(x => x.isHidden
-		? unhideItem(x)
+		? showItem(x)
 		: x);
 	return xs;
 };
 
-// TODO: refactor hideAllCompleted, unhideAllCompleted to use same func, pass in bool call to choose
+// TODO: refactor hideAllCompleted, showAllCompleted to use same func, pass in bool call to choose
 export const hideAllCompletedInAppData = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
 	myList: hideAllCompleted(appData.myList),
 	lastDone: appData.lastDone });
 
-export const unhideAllCompletedInAppData = (appData: IAppData): IAppData =>
+export const showAllCompletedInAppData = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
-	myList: unhideAllCompleted(appData.myList),
+	myList: showAllCompleted(appData.myList),
 	lastDone: appData.lastDone });
 
 export const toggleHideAllInAppData = (appData: IAppData): IAppData =>
 	hasHideableItems(appData.myList)
 		? hideAllCompletedInAppData(appData)
 		: hasShowableItems(appData.myList)
-			? unhideAllCompletedInAppData(appData)
-			: (console.log(`No items found to hide or show...`),
+			? showAllCompletedInAppData(appData)
+			: (console.log(nothingToToggleHide),
 				returnAppDataBackToMenu(appData))
 
 // TODO: refactor to replace hasAllHidden, isAllComplete, etc. with isAll(status): boolean
 export const hasAllHidden = (appData: IAppData): boolean =>
 	countHidden(appData.myList) === countCompleted(appData.myList);
 
-// TODO: refactor to return new IAppData
-export const resetLastDone = (appData: IAppData): number => 
-	(//console.log(`Resetting lastDone....`),
-	UNSET_LASTDONE);
-
 export const filterNotHidden = (xs: IItem[]): IItem[] =>
 	xs.filter(x => !x.isHidden)
-
 
 export const createBlankData = (): IAppData =>
 	({ currentState: 'menu', myList: [], lastDone: UNSET_LASTDONE });
