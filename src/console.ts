@@ -8,7 +8,7 @@ import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNew
 	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
 	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
 	isFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
-	hasHideableItems, moveHiddenToArchive, hideAllCompletedInAppData, UNSET_LASTDONE } from ".";
+	hasHideableItems, hideAllCompletedInAppData, UNSET_LASTDONE, hideAllCompleted, countHidden, hasAllHidden, unhideAllCompletedInAppData, toggleHideAllInAppData } from ".";
 
 import { exit } from 'process';
 import { returnJSONblogFromFile } from './af-load';
@@ -18,7 +18,6 @@ import { serializeAppDataToCSV } from './af-save';
 export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
 	myList: appData.myList,
-	myArchive: appData.myArchive,
 	lastDone: appData.lastDone });
 
 export const printList = (nameTexts: string[]): void =>
@@ -127,7 +126,7 @@ export const menuTexts: any = {
 	'add':'Add New To-Do',
 	'mark':'Mark & Review List',
 	'do':'Focus on To-Do',
-	'hide': 'Hide Completed',
+	'hide': 'Toggle Hiding of Completed',
 	'save': 'Save to CSV',
 	'load': 'Load from CSV',
 	'read-about':'Read About AutoFocus',
@@ -167,7 +166,7 @@ const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =
 
 // CRITICAL
 // ISSUE: Dev clarifies native API for item creation,
-//    enforces strict usage of combined myList, myArchive count for ID generation #22
+//    enforces strict usage of ~~combined~~ myList, ~~myArchive~~ count for ID generation #22
 // TODO: implement ask first, return appData as is (for "unhappy path") or
 // 				appData with a new item appended
 // TODO: implement with askOptional to cancel to-do input
@@ -178,7 +177,6 @@ export const createAndAddNewItemViaPromptIO =
 		myList: addItem(appData.myList)(createNewItem(
 			await askOpenEndedIO(enterNewItem)
 			)(genNextID(appData))),
-		myArchive: appData.myArchive,
 		lastDone: appData.lastDone
 	});
 
@@ -320,7 +318,6 @@ const resolveMarkStateAndReviewState = async (appData: IAppData): Promise<IAppDa
 	return reviewableAfterAutoMark
 	? ({currentState: 'menu',
 		myList: await reviewIfPossible(appData.myList)(appData.lastDone),
-		myArchive: appData.myArchive,
 		lastDone: appData.lastDone})
 	: returnAppDataBackToMenu(appData);
 }
@@ -336,8 +333,7 @@ const displayCMWTDandWaitForUser = async (appData: IAppData): Promise<IAppData> 
 	//   follow-up question to quick-create a new item
 	{currentState: 'menu',
 		lastDone: getCMWTDindex(appData.myList), // uses (soon-to-be) old CMWTD as the new last done 
-		myList: markCMWTDindexComplete(appData),
-		myArchive: appData.myArchive
+		myList: markCMWTDindexComplete(appData)
 	});
 
 // TODO: assess whether this is a "leaky abstraction" (?) in the
@@ -390,20 +386,24 @@ const resolveMutatingErrorState = (appData: IAppData): IAppData =>
 const resolveMenuState = async (appData: IAppData): Promise<IAppData> =>
 	({ currentState: await promptUserAtMenuToChangeState(appData.currentState),
 		myList: appData.myList,
-		myArchive: appData.myArchive,
 		lastDone: appData.lastDone });
 
+// OLD ALGORITHM
 // 1. see if there are any hide-able (completed, non-hidden) items
 // 2. if yes to 1, give the user a choice: "Do you want to hide completed items?"
-const resolveHideAndArchiveState = async (appData: IAppData): Promise<IAppData> =>
-	!hasHideableItems(appData.myList)
-	? (console.log(noHideableFound),
-		returnAppDataBackToMenu(appData))
-	: await promptUserToHide()
-		? (console.log(confirmHiding),
-			moveHiddenToArchive(hideAllCompletedInAppData(appData)))
-		: (//console.log(`Deciding not to hide...`),
-			returnAppDataBackToMenu(appData));
+// NEW ALGORITHM
+// 1. see if there are any hide-able (non-hidden, completed) items
+// 2. if yes to 1, hide all hide-able items (all completed items)
+// 3. if no to 1 because all items are hidden, show all hide-able items (all completed items)
+// 3. if no to 1 because there are no hide-able items, say that there are no hideable items 
+const resolveToggleHideState = (appData: IAppData): IAppData =>
+	toggleHideAllInAppData(appData);
+	// hasHideableItems(appData.myList)
+	// 	? hideAllCompletedInAppData(appData)
+	// 	: hasAllHidden(appData)
+	// 		? unhideAllCompletedInAppData(appData)
+	// 		: (console.log(noHideableFound),
+	// 			returnAppDataBackToMenu(appData));
 
 const hasSomethingToSave = (appData: IAppData): boolean =>
 	appData.myList.length > 0;
@@ -432,7 +432,6 @@ const resolveLoadState = async (appData: IAppData): Promise<IAppData> =>
 	(// console.log(`Loading...`),
 		({currentState: 'menu',
 			myList: (await returnJSONblogFromFile('save.csv')).map(x => itemifyJSONitem(x)),
-			myArchive: [],
 			lastDone: UNSET_LASTDONE }));
 
 const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
@@ -445,7 +444,7 @@ const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 				: appData.currentState === 'do'
 					? resolveFocusState(appData)
 					: appData.currentState === 'hide'
-						? resolveHideAndArchiveState(appData)
+						? resolveToggleHideState(appData)
 						: appData.currentState === 'save'
 							? resolveSaveState(appData)
 							: appData.currentState === 'load'
