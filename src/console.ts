@@ -1,17 +1,19 @@
-const readline = require('readline')
+import readline from 'readline';
 
 import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy } from "./fp-utility";
 import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, 
 	cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, 
-	cantFocus, wantToHideCompleted } from "./af-strings";
+	cantFocus, wantToHideCompleted, noHideableFound } from "./af-strings";
 import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNewItem, IItem, 
 	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
 	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
 	isFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
-	hasHideableItems, moveHiddenToArchive, hideAllCompletedInAppData } from ".";
+	hasHideableItems, moveHiddenToArchive, hideAllCompletedInAppData, UNSET_LASTDONE } from ".";
 
 import { exit } from 'process';
-import { serializeAppDataToCSV } from "./af-save-load";
+import { returnJSONblogFromFile } from './af-load';
+import { serializeAppDataToCSV } from './af-save';
+import { logJSONitem } from './af-debug';
 
 export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
@@ -104,19 +106,22 @@ export interface IOneToManyMap<T> {
 	[key: string]: T[];
 }
 
+// APP STATES
 // Map<TAppState, TAppState[]>
 export const possibleStates: IOneToManyMap<TAppState> = {
-	'menu': ['see', 'add', 'mark', 'do', 'hide', 'save', 'read-about'],
+	'menu': ['see', 'add', 'mark', 'do', 'hide', 'save', 'load', 'read-about'],
 	'see': ['menu'],
 	'add': ['menu'],
 	'mark': ['menu'],
 	'do': ['menu'],
 	'hide': ['menu'],
 	'save': ['menu'],
+	'load': ['menu'],
 	'read-about': ['menu'],
 	'quit': []
 }
 
+// APP STATES
 // ISSUE: User can always see their to-do list #23
 export const menuTexts: any = {
 	'see':'View List',
@@ -125,6 +130,7 @@ export const menuTexts: any = {
 	'do':'Focus on To-Do',
 	'hide': 'Hide Completed',
 	'save': 'Save to CSV',
+	'load': 'Load from CSV',
 	'read-about':'Read About AutoFocus',
 	'quit': 'Exit Program'
 };
@@ -139,13 +145,15 @@ export const changeState = (current: TAppState) => (next: TAppState): TAppState 
 export const sayState = (state: TAppState): void =>
 	console.log(`Current state is now: '${state}'.`);
 
+// APP STATES
 export const menuList: TAppState[] = 
-	['see', 'add', 'mark', 'do', 'hide', 'save', 'read-about', 'quit'];
+	['see', 'add', 'mark', 'do', 'hide', 'save', 'load', 'read-about', 'quit'];
 
 export const promptUserAtMenuToChangeState = 
 	async (s: TAppState): Promise<TAppState> =>
 	changeState(s)(menuList[await promptUserForMenuOption(menuList)]);
 
+// TODO: embed call to `toLowerCase()` within askOptionalYNio function (before return)
 // TODO: add IO suffix to function name
 const promptUserToHide = async (): Promise<boolean> => 
 	(await askOptionalYNio(wantToHideCompleted))
@@ -174,35 +182,6 @@ export const createAndAddNewItemViaPromptIO =
 		myArchive: appData.myArchive,
 		lastDone: appData.lastDone
 	});
-
-// const logGet1stUnmarkedAfter = (arr: IItem[]) => (i: Tindex): void =>
-// 	(
-// 		console.log(`   Getting first unmarked index after index ${i}`
-// 			+ ` where ARRAY LEN is ${arr.length}...`),
-// 		console.log(`... it appears to be `
-// 			+ `${mapUnmarkedToIDAndFilter(arr).filter(x => x > i)[0]}`)
-// 	);
-
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-// const printIsMarkableList = (arr: IItem[]) => (lastDone: Tindex): void =>
-// 	console.log(`It is ${boolToTFstring(isMarkableList(arr)(lastDone))} that this is a markable list.`)
-
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-// const printMarkedCount = (arr: IItem[]): void =>
-// 	console.log(`The # of marked items is now ${countMarked(arr)}`)
-
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-// export const printStatsBlock = (arr: IItem[]) => (lastDone: Tindex) => {
-// 	printIsMarkableList(arr)(lastDone);
-// 	printCMWTDdata(arr);
-// 	printMarkedCount(arr)
-// }
-
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-// const printCMWTDdata = (arr: IItem[]): void =>
-// 	isNegOne(getCMWTDindex(arr))
-// 		? console.log(`CMWTD is not set yet.`)
-// 		: console.log(`CMWTD is, at index ${getCMWTDindex(arr)}: '${getCMWTDstring(arr)}'`)
 
 const printFence = (): void =>
 	console.log(`----------`);
@@ -402,7 +381,7 @@ const resolveNonMutatingErrorState = (): number =>
 const enterNonMutatingState = (appData: IAppData): number =>
 	appData.currentState === 'see'
 		// TODO: make clear to user that list has been split into hidden and visible
-		? resolveSeeState(appData.myList.filter(x => !x.isHidden))
+		? resolveSeeState(appData.myList) // .filter(x => !x.isHidden)
 		: appData.currentState === 'read-about'
 			? resolveReadAboutState()
 			: resolveNonMutatingErrorState();
@@ -421,7 +400,7 @@ const resolveMenuState = async (appData: IAppData): Promise<IAppData> =>
 // 2. if yes to 1, give the user a choice: "Do you want to hide completed items?"
 const resolveHideAndArchiveState = async (appData: IAppData): Promise<IAppData> =>
 	!hasHideableItems(appData.myList)
-	? (console.log(`No hideable items found. First, focus on items to complete them.`),
+	? (console.log(noHideableFound),
 		returnAppDataBackToMenu(appData))
 	: await promptUserToHide()
 		? (console.log(`Hiding hideable items...`),
@@ -436,10 +415,28 @@ const resolveSaveState = async (appData: IAppData): Promise<IAppData> =>
 	!hasSomethingToSave(appData)
 		? (console.log(`There is no list data yet to save.`),
 			returnAppDataBackToMenu(appData))
-		: (console.log(`Saving to local directory...`),
+		: (console.log(`Saving ${appData.myList.length} item(s) to local directory...`),
 			serializeAppDataToCSV(appData),
 			returnAppDataBackToMenu(appData)
-		)
+		);
+
+const itemifyJSONitem = (x: any) => (
+	// logJSONitem(x),
+	({
+		id: Number(x.id),
+		status: x.status,
+		textName: x.textName,
+		isHidden: Number(x.isHidden)
+	}));
+
+// TODO: implement fully fleshed out function which returns actual deserialized app data
+const resolveLoadState = async (appData: IAppData): Promise<IAppData> =>
+	// returnAppDataBackToMenu(appData); //(await deserializeAppDataFromCSV("save"))
+	(// console.log(`Loading...`),
+		({currentState: 'menu',
+			myList: (await returnJSONblogFromFile('save.csv')).map(x => itemifyJSONitem(x)),
+			myArchive: [],
+			lastDone: UNSET_LASTDONE }));
 
 const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 	appData.currentState === 'menu'
@@ -454,9 +451,12 @@ const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 						? resolveHideAndArchiveState(appData)
 						: appData.currentState === 'save'
 							? resolveSaveState(appData)
-							: resolveMutatingErrorState(appData);
+							: appData.currentState === 'load'
+								? resolveLoadState(appData)
+								: resolveMutatingErrorState(appData);
 
-const mutatorStates: TAppState[] = ['menu', 'add', 'mark', 'do', 'hide', 'save'];
+// APP STATES
+const mutatorStates: TAppState[] = ['menu', 'add', 'mark', 'do', 'hide', 'save', 'load']; // 
 
 // s === state, mss === mutator states
 const stateIsMutator = (s: TAppState) => (mss: TAppState[]) =>
@@ -482,7 +482,7 @@ export const main = async () => {
 	console.clear();
 	greetIO();
 	await runProgram(true)(createBlankData());
-	//// await runProgram(true)(createDemoData());
+	// await runProgram(true)(createDemoData());
 	//// await runProgram(true)(createLongE2Edata());
 	exit(0);
 }
