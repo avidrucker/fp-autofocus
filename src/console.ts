@@ -1,14 +1,14 @@
 import readline from 'readline';
 
-import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy, inRangeInclusive } from "./fp-utility";
+import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy, inRangeInclusive } from './fp-utility';
 import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, 
 	cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, 
-	cantFocus, wantToHideCompleted, noHideableFound, confirmHiding, nothingToSave } from "./af-strings";
+	cantFocus, wantToHideCompleted, noHideableFound, confirmHiding, nothingToSave, listHeader, byeMessage, fence, menuHeader } from './af-strings';
 import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNewItem, IItem, 
 	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
 	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
-	isFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
-	hasHideableItems, hideAllCompletedInAppData, UNSET_LASTDONE, hideAllCompleted, countHidden, hasAllHidden, showAllCompletedInAppData, toggleHideAllInAppData } from ".";
+	hasFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
+	hasHideableItems, hideAllCompletedInAppData, UNSET_LASTDONE, hideAllCompleted, countHidden, hasAllHidden, showAllCompletedInAppData, toggleHideAllInAppData } from '.';
 
 import { exit } from 'process';
 import { returnJSONblogFromFile } from './af-load';
@@ -41,7 +41,7 @@ const rl = readline.createInterface({
 
 // export const getNameIO = () =>
 // 	new Promise<string>((resolve) => {
-// 		rl.question("hi, what's your name?", (name: string) => { resolve(name)})
+// 		rl.question('hi, what's your name?', (name: string) => { resolve(name)})
 // 	});
 
 export const askOpenEndedIO = (q: string) =>
@@ -76,7 +76,7 @@ const printMenuItemAtIndex = (x: TAppState) => (i: Tindex): void =>
 	console.log(`${i+1}: ${x}`)
 
 export const printMenu = (menuList: TAppState[]) => (menuTexts: any): (() => void) =>
-	() => (console.log('MAIN MENU'),
+	() => (console.log(menuHeader),
 	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItemAtIndex(x)(i)));
 
 // note: this function can stay in console.ts for now,
@@ -151,12 +151,6 @@ export const promptUserAtMenuToChangeState =
 	async (s: TAppState): Promise<TAppState> =>
 	changeState(s)(menuList[await promptUserForMenuOption(menuList)]);
 
-// TODO: embed call to `toLowerCase()` within askOptionalYNio function (before return)
-// TODO: add IO suffix to function name
-const promptUserToHide = async (): Promise<boolean> => 
-	(await askOptionalYNio(wantToHideCompleted))
-		.toLowerCase() === 'y';
-
 const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =>
 	(
 		wrapPrintWithLines(printMenu(menuList)(menuTexts)),
@@ -167,10 +161,10 @@ const promptUserForMenuOption = async (menuList: TAppState[]): Promise<number> =
 // CRITICAL
 // ISSUE: Dev clarifies native API for item creation,
 //    enforces strict usage of ~~combined~~ myList, ~~myArchive~~ count for ID generation #22
-// TODO: implement ask first, return appData as is (for "unhappy path") or
+// TODO: implement ask first, return appData as is (for 'unhappy path') or
 // 				appData with a new item appended
 // TODO: implement with askOptional to cancel to-do input
-// TODO: implement fallback return of empty array "box" to signify nothing was created
+// TODO: implement fallback return of empty array 'box' to signify nothing was created
 export const createAndAddNewItemViaPromptIO = 
 	async (appData: IAppData): Promise<IAppData> => ({
 		currentState: 'menu',
@@ -181,7 +175,7 @@ export const createAndAddNewItemViaPromptIO =
 	});
 
 const printFence = (): void =>
-	console.log(`----------`);
+	console.log(fence);
 
 // wrapper higher order function
 const wrapPrintWithLines = (f: () => void): void =>
@@ -189,21 +183,19 @@ const wrapPrintWithLines = (f: () => void): void =>
 	f(),
 	printFence());
 
-
-// TODO: move string literals to top of program
 const printListHeader = (): void =>
-	console.log('AUTOFOCUS LIST');
+	console.log(listHeader);
 
 const resolveSeeState = (arr: IItem[]): number =>
 	(//console.log(`RESOLVING SEE STATE...`),
 		printFence(),
 		printListHeader(),
 		printListOrStatus(stringifyList(arr)),
-		//// smartLog("myList")(arr)(true), // UNCOMMENT TO LOG: VERY USEFUL
+		//// smartLog('myList')(arr)(true), // UNCOMMENT TO LOG: VERY USEFUL
 		0);
 
 const resolveQuitState = (appData: IAppData): IAppData =>
-	(console.log(`See you!`),
+	(console.log(byeMessage),
 		// smartLogAll(appData), // TODO: COMMENT THIS OUT FOR APP PUBLISHING
 		appData);
 
@@ -218,7 +210,7 @@ const askWhich = (arr: IItem[]) => async (i: Tindex): Promise<string> =>
 	await askOptionalYNio(
 		generateWhichQuestion(getTextByIndex(arr)(i))(getCMWTDstring(arr)));
 
-// TODO: rename function to clarify intent & goal, such as "answerCharToAnswerString"
+// TODO: rename function to clarify intent & goal, such as 'answerCharToAnswerString'
 const interpretWhich = (textInput: string): TAnswerState =>
 	textInput.toLowerCase()  === 'q'
 	? (//console.log('Quitting mid-review...'),
@@ -329,14 +321,14 @@ const promptUserForAnyKey = async () =>
 // CRITICAL: TODO: add IO suffix to signal this function requires user interaction/input
 const displayCMWTDandWaitForUser = async (appData: IAppData): Promise<IAppData> =>
 	(await promptUserForAnyKey(),
-	// TODO: implement "do you have work remaining on this task? (y/n)"
+	// TODO: implement 'do you have work remaining on this task? (y/n)'
 	//   follow-up question to quick-create a new item
 	{currentState: 'menu',
 		lastDone: getCMWTDindex(appData.myList), // uses (soon-to-be) old CMWTD as the new last done 
 		myList: markCMWTDindexComplete(appData)
 	});
 
-// TODO: assess whether this is a "leaky abstraction" (?) in the
+// TODO: assess whether this is a 'leaky abstraction' (?) in the
 //    sense of whether this is needed only for console, testing, or core, & rescope accordingly
 export type TValidAnswer = 'y' | 'n' | 'q';
 
@@ -355,7 +347,7 @@ const enterFocusStateIO = async (appData: IAppData): Promise<IAppData> => {
 
 const resolveFocusState = async (appData: IAppData): Promise<IAppData> =>
 	// console.log(`This is a stub for Focus Mode...`); 
-	isFocusableList(appData)
+	hasFocusableList(appData)
 		? (console.clear(),
 			console.log(`Focusing on '${getCMWTDstring(appData.myList)}'...`),
 			enterFocusStateIO(appData)
@@ -390,7 +382,7 @@ const resolveMenuState = async (appData: IAppData): Promise<IAppData> =>
 
 // OLD ALGORITHM
 // 1. see if there are any hide-able (completed, non-hidden) items
-// 2. if yes to 1, give the user a choice: "Do you want to hide completed items?"
+// 2. if yes to 1, give the user a choice: 'Do you want to hide completed items?'
 // NEW ALGORITHM
 // 1. see if there are any hide-able (non-hidden, completed) items
 // 2. if yes to 1, hide all hide-able items (all completed items)
@@ -405,11 +397,11 @@ const resolveToggleHideState = (appData: IAppData): IAppData =>
 	// 		: (console.log(noHideableFound),
 	// 			returnAppDataBackToMenu(appData));
 
-const hasSomethingToSave = (appData: IAppData): boolean =>
+const appIsSaveable = (appData: IAppData): boolean =>
 	appData.myList.length > 0;
 
 const resolveSaveState = async (appData: IAppData): Promise<IAppData> =>
-	!hasSomethingToSave(appData)
+	!appIsSaveable(appData)
 		? (console.log(nothingToSave),
 			returnAppDataBackToMenu(appData))
 		: (console.log(`Saving ${appData.myList.length} item(s) to local directory...`),
@@ -426,9 +418,9 @@ const itemifyJSONitem = (x: any) => (
 		isHidden: Number(x.isHidden)
 	}));
 
-// TODO: implement fully fleshed out function which returns actual deserialized app data
+// TODO: confirm that blank data is loaded when there are any issues
+//   loading (load data is bad or missing)
 const resolveLoadState = async (appData: IAppData): Promise<IAppData> =>
-	// returnAppDataBackToMenu(appData); //(await deserializeAppDataFromCSV("save"))
 	(// console.log(`Loading...`),
 		({currentState: 'menu',
 			myList: (await returnJSONblogFromFile('save.csv')).map(x => itemifyJSONitem(x)),
