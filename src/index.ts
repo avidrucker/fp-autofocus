@@ -1,7 +1,8 @@
 "use strict";
 
-import { existsInArr, isEmptyArr, isNegOne, isNeg, deepCopy } from "./fp-utility";
+import { existsInArr, isEmptyArr, isNegOne, isNeg, deepCopy, pushToAndReturnArr } from "./fp-utility";
 import { automarkingFirstMarkable } from "./af-strings";
+import { returnAppDataBackToMenu } from "./console";
 
 export type TItemStatus =  'unmarked' | 'dotted' | 'complete';
 
@@ -31,17 +32,11 @@ export type IItem = {
 export interface IAppData {
 	currentState: TAppState,
 	myList: IItem[],
-	myArchive: IItem[],
 	lastDone: Tindex
 }
 
 export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 
 	'hide' | 'save' | 'load' | 'read-about' | 'quit';
-
-export const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
-	(arr.push(newItem),
-	// console.log(`New item added successfully!`),
-	arr);
 
 /** @type {Function} inbetween API which prevents newItems with invalid nameInput text from being added */
 export const addItem = (arr: IItem[]) => (newItem: IItem): IItem[] =>
@@ -83,7 +78,7 @@ export const stringifyList = (xs: IItem[]): string[] =>
 	xs.map(x => stringifyConcise(x)) // ALT: stringifyVerbose(x)
 
 export const genNextID = (appData: IAppData): Tid =>
-  appData.myList.length + appData.myArchive.length;
+  appData.myList.length;
 
 export const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === "dotted")
@@ -281,46 +276,88 @@ export const markCMWTDindexComplete = (appData: IAppData): IItem[] =>
 	markComplete(appData.myList)(getCMWTDindex(appData.myList)))
 
 // CRITICAL
-// ISSUE: Dev clarifies native API for item creation, enforces strict usage of combined myList,
-//    myArchive count for ID generation #22
+// ISSUE: Dev clarifies native API for item creation, enforces strict usage of ~~combined~~ myList,
+//    ~~myArchive~~ count for ID generation #22
+// TODO: as above issue states, instead take in appData and return appData
 export const duplicateLastDoneandAddToList = (arr: IItem[]) => (lastDone: Tindex): IItem[] =>
 	(arr.push(
 		{ textName: arr[lastDone].textName, status: 'unmarked', id: arr.length, isHidden: 0} ),
 		arr);
 
-export const isHideable = (x: IItem): boolean =>
+export const isHideableItem = (x: IItem): boolean =>
 	x.status === 'complete' && x.isHidden === 0;
 
-export const hasHideableItems = (xs: IItem[]): boolean =>
-	xs
-		.filter(x => isHideable(x))
-		.length > 0;
+export const isShowableItem = (x: IItem): boolean =>
+	x.status === 'complete' && x.isHidden === 1;
 
 export const countHideable = (xs: IItem[]): number =>
 	xs
-		.filter(x => isHideable(x))
+		.filter(x => isHideableItem(x))
 		.length;
+
+export const countShowable = (xs: IItem[]): number =>
+		xs
+			.filter(x => isShowableItem(x))
+			.length;
+
+export const hasHideableItems = (xs: IItem[]): boolean =>
+		countHideable(xs) > 0;
+
+export const hasShowableItems = (xs: IItem[]): boolean =>
+		countShowable(xs) > 0;
 		
+// TODO: refactor countHidden, countCompleted to be one func which takes one property input
 export const countHidden = (xs: IItem[]): number =>
 	xs.filter(x => x.isHidden).length;
 
+export const countCompleted = (xs: IItem[]): number =>
+	xs.filter(x => x.status === 'complete').length;
+
+// TODO: refactor hideItem and unhideItem to be one func which takes one bool input `setStatus()`
 export const hideItem = (i: IItem): IItem =>
 	({id: i.id, status: i.status, textName: i.textName, isHidden: 1});
 
+export const unhideItem = (i: IItem): IItem =>
+	({id: i.id, status: i.status, textName: i.textName, isHidden: 0});
+
+// TODO: refactor hideAllCompleted and unhideAllCompleted to be one func
+//   which takes a comparison condition and call to setStatus()
 export const hideAllCompleted = (xs: IItem[]): IItem[] => {
-	// console.log(`BEFORE:`)
 	xs = xs.map(x => !x.isHidden && x.status === 'complete'
 		? hideItem(x)
 		: x);
-		// console.log(`AFTER:`)
 	return xs;
 };
 
+export const unhideAllCompleted = (xs: IItem[]): IItem[] => {
+	xs = xs.map(x => x.isHidden
+		? unhideItem(x)
+		: x);
+	return xs;
+};
+
+// TODO: refactor hideAllCompleted, unhideAllCompleted to use same func, pass in bool call to choose
 export const hideAllCompletedInAppData = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
 	myList: hideAllCompleted(appData.myList),
-	myArchive: appData.myArchive,
 	lastDone: appData.lastDone });
+
+export const unhideAllCompletedInAppData = (appData: IAppData): IAppData =>
+	({ currentState: 'menu',
+	myList: unhideAllCompleted(appData.myList),
+	lastDone: appData.lastDone });
+
+export const toggleHideAllInAppData = (appData: IAppData): IAppData =>
+	hasHideableItems(appData.myList)
+		? hideAllCompletedInAppData(appData)
+		: hasShowableItems(appData.myList)
+			? unhideAllCompletedInAppData(appData)
+			: (console.log(`No items found to hide or show...`),
+				returnAppDataBackToMenu(appData))
+
+// TODO: refactor to replace hasAllHidden, isAllComplete, etc. with isAll(status): boolean
+export const hasAllHidden = (appData: IAppData): boolean =>
+	countHidden(appData.myList) === countCompleted(appData.myList);
 
 // TODO: refactor to return new IAppData
 export const resetLastDone = (appData: IAppData): number => 
@@ -330,27 +367,6 @@ export const resetLastDone = (appData: IAppData): number =>
 export const filterNotHidden = (xs: IItem[]): IItem[] =>
 	xs.filter(x => !x.isHidden)
 
-export const filterHiddenAndConcatToArchive = (xs: IItem[]) => (ys: IItem[]) =>
-	xs.filter(x => x.isHidden).concat(deepCopy(ys));
-
-// note: hiding items is a three step process
-// first, items are marked as hidden.
-// second, they are copied over to the archive list
-// third, they are "removed" from the original list (via replacement w/ a filtered copy)
-export const moveHiddenToArchive = (appData: IAppData): IAppData =>
-	({currentState: 'menu',
-		myArchive: filterHiddenAndConcatToArchive(appData.myList)(appData.myArchive),
-		myList: filterNotHidden(appData.myList),
-		lastDone: resetLastDone(appData)});
-
-
-// TODO: assess whether SIM functions are resolveable to "core" "pure" functions
-//   or, if they would benefit from being strictly "demo" functions
-export const SIMresolveHideAndArchiveState = (appData: IAppData): IAppData =>
-	(console.log(`Hiding hideable items...`),
-	// smartLogAll(appData), // note: use smartLogAll() to log
-	moveHiddenToArchive(hideAllCompletedInAppData(appData)));
-
 
 export const createBlankData = (): IAppData =>
-	({ currentState: 'menu', myList: [],  myArchive: [], lastDone: UNSET_LASTDONE });
+	({ currentState: 'menu', myList: [], lastDone: UNSET_LASTDONE });
