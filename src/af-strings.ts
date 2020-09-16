@@ -21,3 +21,7 @@ export const noHideableFound = `No hideable items found. First, focus on items t
 export const confirmHiding = `Hiding hideable items...`;
 export const nothingToSave = `There is no list data yet to save.`;
 export const nothingToToggleHide = `No items found to hide or show...`;
+export const listHeader = 'AUTOFOCUS LIST';
+export const byeMessage = `See you!`;
+export const fence = `----------`;
+export const menuHeader = 'MAIN MENU';
