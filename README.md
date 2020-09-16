@@ -9,7 +9,7 @@ A (mostly) functional programming style to-do list management system codebase. T
 - [ ] Migrate new app data level & utility functions from PWA app WIP back to fp-autofocus "core"
 - [ ] Enable "showing X of Y items" when printing list with hidden/archived items `stringifyShowingXofY(x)(y)`
 - [ ] Refactor code base to remove "place oriented programming" (ie. remove archive, replace w/ boolean flags)
-- [ ] Implement export all items to CSV `serializeToCSV(appData)`
+- [x] Implement export all items to CSV `serializeToCSV(appData)`
 - [ ] Export command line app to "autofocus-cla" repo which uses "fp-autofocus" core as dependency
 - [x] Reimplement (re-enable) unit, integration, e2e tests
 - [ ] Create `dist/` folder to keep `src/` and `tests/` clean & simple to work with
