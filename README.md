@@ -13,3 +13,4 @@ A (mostly) functional programming style to-do list management system codebase. T
 - [ ] Export command line app to "autofocus-cla" repo which uses "fp-autofocus" core as dependency
 - [x] Reimplement (re-enable) unit, integration, e2e tests
 - [ ] Create `dist/` folder to keep `src/` and `tests/` clean & simple to work with
+- [ ] Upgrade `console.ts` CLA usage of algorithm to reflect updated understanding of "auto-mark"
