@@ -8,7 +8,7 @@ export const smartLog = (label: string) => <T>(val: T) => (tabular: boolean) =>
 export const smartLogAll = (appData: IAppData): void =>
 	(smartLog("currentState")(appData.currentState)(false),
 	smartLog("myList")(appData.myList)(true),
-	smartLog("myArchive")(appData.myArchive)(true),
+	// smartLog("myArchive")(appData.myArchive)(true),
 	smartLog("lastDone")(appData.lastDone)(false));
 
 export const logJSONitem = (x: any): void => (
