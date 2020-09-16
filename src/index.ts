@@ -21,7 +21,7 @@ export type IItem = {
 	id: Tid,
 	status: TItemStatus,
 	textName: string,
-	isHidden: boolean
+	isHidden: number // was boolean, trying now for false == 0, true == 1
 	//created: Date,
 	//dottedOn: Date,
 	//completedOn: Date,
@@ -36,7 +36,7 @@ export interface IAppData {
 }
 
 export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' | 
-	'hide' | 'save' | 'read-about' | 'quit';
+	'hide' | 'save' | 'load' | 'read-about' | 'quit';
 
 export const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
 	(arr.push(newItem),
@@ -57,7 +57,7 @@ export const createNewItem = (nameInput: string) => (nextID: Tid): IItem =>
 	{id: nextID,
 		status: 'unmarked',
 		textName: nameInput,
-		isHidden: false}); // isHidden: false
+		isHidden: 0}); // isHidden: false
 
 export const dotItem = (i: IItem): IItem =>
 	({id: i.id,
@@ -285,11 +285,11 @@ export const markCMWTDindexComplete = (appData: IAppData): IItem[] =>
 //    myArchive count for ID generation #22
 export const duplicateLastDoneandAddToList = (arr: IItem[]) => (lastDone: Tindex): IItem[] =>
 	(arr.push(
-		{ textName: arr[lastDone].textName, status: 'unmarked', id: arr.length, isHidden: false} ),
+		{ textName: arr[lastDone].textName, status: 'unmarked', id: arr.length, isHidden: 0} ),
 		arr);
 
 export const isHideable = (x: IItem): boolean =>
-	x.status === 'complete' && x.isHidden === false;
+	x.status === 'complete' && x.isHidden === 0;
 
 export const hasHideableItems = (xs: IItem[]): boolean =>
 	xs
@@ -305,7 +305,7 @@ export const countHidden = (xs: IItem[]): number =>
 	xs.filter(x => x.isHidden).length;
 
 export const hideItem = (i: IItem): IItem =>
-	({id: i.id, status: i.status, textName: i.textName, isHidden: true});
+	({id: i.id, status: i.status, textName: i.textName, isHidden: 1});
 
 export const hideAllCompleted = (xs: IItem[]): IItem[] => {
 	// console.log(`BEFORE:`)
