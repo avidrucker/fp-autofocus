@@ -40,3 +40,6 @@ export const doNothing = () => {};
 export const deepCopy = <T>(x: T): T =>
 	JSON.parse(JSON.stringify(x));
 
+export const inRangeInclusive = (lower: number) => (upper: number) => (x: number): boolean =>
+	x >= lower && x <= upper;
+
