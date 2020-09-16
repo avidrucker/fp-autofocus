@@ -1,8 +1,12 @@
-// TODO: relocate to utility.ts
 export const isEmptyArr = <T>(arr: T[]): boolean =>
 	arr.length === 0;
 
-	export const createGreeting = (greeting: string) => (appName: string): string =>
+export const pushToAndReturnArr = <T>(arr: T[]) => (newItem: T): T[] =>
+	(arr.push(newItem),
+	// console.log(`New item added successfully!`),
+	arr);
+
+export const createGreeting = (greeting: string) => (appName: string): string =>
 	`${greeting} ${appName}`;
 
 export const isPluralFromCount = (count: number): boolean =>
