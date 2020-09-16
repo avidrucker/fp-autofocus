@@ -8,7 +8,7 @@
     "start2": "tsc && node dist/src/index.js",
     "start-cla": "tsc && ts-node src/console.ts",
     "build": "tsc",
-    "test": "mocha tests/index.test.js --exit",
+    "test": "mocha dist/tests/index.test.js --exit",
     "build-and-test": "yarn build && yarn test"
   },
   "keywords": [
