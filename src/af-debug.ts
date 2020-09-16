@@ -8,7 +8,6 @@ export const smartLog = (label: string) => <T>(val: T) => (tabular: boolean) =>
 export const smartLogAll = (appData: IAppData): void =>
 	(smartLog("currentState")(appData.currentState)(false),
 	smartLog("myList")(appData.myList)(true),
-	// smartLog("myArchive")(appData.myArchive)(true),
 	smartLog("lastDone")(appData.lastDone)(false));
 
 export const logJSONitem = (x: any): void => (
@@ -36,22 +35,5 @@ export const logJSONitem = (x: any): void => (
 // 	);
 
 // ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-// const printIsMarkableList = (arr: IItem[]) => (lastDone: Tindex): void =>
-// 	console.log(`It is ${boolToTFstring(isMarkableList(arr)(lastDone))} that this is a markable list.`)
-
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
 // const printMarkedCount = (arr: IItem[]): void =>
 // 	console.log(`The # of marked items is now ${countMarked(arr)}`)
-
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-// export const printStatsBlock = (arr: IItem[]) => (lastDone: Tindex) => {
-// 	printIsMarkableList(arr)(lastDone);
-// 	printCMWTDdata(arr);
-// 	printMarkedCount(arr)
-// }
-
-// ISSUE: Dev replaces custom prints with `smartLog()()()` #25
-// const printCMWTDdata = (arr: IItem[]): void =>
-// 	isNegOne(getCMWTDindex(arr))
-// 		? console.log(`CMWTD is not set yet.`)
-// 		: console.log(`CMWTD is, at index ${getCMWTDindex(arr)}: '${getCMWTDstring(arr)}'`)
