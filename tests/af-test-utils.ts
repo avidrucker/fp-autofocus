@@ -189,7 +189,8 @@ export const markAllAs = (arr: IItem[]) => (s: TItemStatus): IItem[] =>
   arr.map((x) => ({ id: x.id, status: s, textName: x.textName, isHidden: x.isHidden }));
 
 export const listToMarksString = (arr: IItem[]) =>
-  arr
+	arr
+		.filter((x) => x.isHidden === 0) // TODO: confirm that this correct hides from rendering hidden items
     .map((x) => x.status)
     .map((x) => statusToMark(x))
     .map((x) => wrapStrInBoxOp(x))
