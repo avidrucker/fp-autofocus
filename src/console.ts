@@ -1,9 +1,9 @@
 import readline from 'readline';
 
-import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy } from "./fp-utility";
+import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy, inRangeInclusive } from "./fp-utility";
 import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, 
 	cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, 
-	cantFocus, wantToHideCompleted, noHideableFound } from "./af-strings";
+	cantFocus, wantToHideCompleted, noHideableFound, confirmHiding, nothingToSave } from "./af-strings";
 import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNewItem, IItem, 
 	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
 	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
@@ -13,7 +13,7 @@ import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNew
 import { exit } from 'process';
 import { returnJSONblogFromFile } from './af-load';
 import { serializeAppDataToCSV } from './af-save';
-import { logJSONitem } from './af-debug';
+// import { logJSONitem } from './af-debug';
 
 export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
@@ -80,9 +80,8 @@ export const printMenu = (menuList: TAppState[]) => (menuTexts: any): (() => voi
 	() => (console.log('MAIN MENU'),
 	menuList.map(x => menuTexts[x]).forEach((x, i) => printMenuItemAtIndex(x)(i)));
 
-const inRangeInclusive = (lower: number) => (upper: number) => (x: number): boolean =>
-	x >= lower && x <= upper;
-
+// note: this function can stay in console.ts for now,
+// as it doesn't seem to be used elsewhere.
 const createNumRangePrompt = (a: number) => (b: number): string =>
 	`Please choose a number from ${a} to ${b}: `;
 
@@ -345,27 +344,25 @@ const displayCMWTDandWaitForUser = async (appData: IAppData): Promise<IAppData> 
 //    sense of whether this is needed only for console, testing, or core, & rescope accordingly
 export type TValidAnswer = 'y' | 'n' | 'q';
 
-// CRITICAL: TODO: add IO suffix to signal this function requires user interaction/input
 // s === item textName string
-const queryUserIsThereMoreWorkLeft = async (itemText: string): Promise<string> =>
+const queryIsWorkLeftIO = async (itemText: string): Promise<string> =>
 	askOptionalYNio(`Is there work remaining to do on item '${itemText}'? [Y]es/[N]o `);
 
-// CRITICAL: TODO: add IO suffix to signal this function requires user interaction/input
-const enterFocusState = async (appData: IAppData): Promise<IAppData> => {
+
+const enterFocusStateIO = async (appData: IAppData): Promise<IAppData> => {
 	const focusResult = await displayCMWTDandWaitForUser(appData);
-	const answer = queryUserIsThereMoreWorkLeft(getTextByIndex(focusResult.myList)(focusResult.lastDone));
+	const answer = queryIsWorkLeftIO(getTextByIndex(focusResult.myList)(focusResult.lastDone));
 	return (await answer).toLowerCase() === 'y'
 		? (focusResult.myList = duplicateLastDoneandAddToList(focusResult.myList)(focusResult.lastDone), focusResult)
 		: focusResult;
 }
 
-// should only return IItem[] and lastDone
-const resolveDoState = async (appData: IAppData): Promise<IAppData> =>
+const resolveFocusState = async (appData: IAppData): Promise<IAppData> =>
 	// console.log(`This is a stub for Focus Mode...`); 
 	isFocusableList(appData)
 		? (console.clear(),
 			console.log(`Focusing on '${getCMWTDstring(appData.myList)}'...`),
-			enterFocusState(appData)
+			enterFocusStateIO(appData)
 		 )
 		: (console.log(cantFocus),
 			returnAppDataBackToMenu(appData));
@@ -403,7 +400,7 @@ const resolveHideAndArchiveState = async (appData: IAppData): Promise<IAppData> 
 	? (console.log(noHideableFound),
 		returnAppDataBackToMenu(appData))
 	: await promptUserToHide()
-		? (console.log(`Hiding hideable items...`),
+		? (console.log(confirmHiding),
 			moveHiddenToArchive(hideAllCompletedInAppData(appData)))
 		: (//console.log(`Deciding not to hide...`),
 			returnAppDataBackToMenu(appData));
@@ -413,7 +410,7 @@ const hasSomethingToSave = (appData: IAppData): boolean =>
 
 const resolveSaveState = async (appData: IAppData): Promise<IAppData> =>
 	!hasSomethingToSave(appData)
-		? (console.log(`There is no list data yet to save.`),
+		? (console.log(nothingToSave),
 			returnAppDataBackToMenu(appData))
 		: (console.log(`Saving ${appData.myList.length} item(s) to local directory...`),
 			serializeAppDataToCSV(appData),
@@ -446,7 +443,7 @@ const enterMutatingState = async (appData: IAppData): Promise<IAppData> =>
 			: appData.currentState === 'mark'
 				? resolveMarkStateAndReviewState(appData)
 				: appData.currentState === 'do'
-					? resolveDoState(appData)
+					? resolveFocusState(appData)
 					: appData.currentState === 'hide'
 						? resolveHideAndArchiveState(appData)
 						: appData.currentState === 'save'
