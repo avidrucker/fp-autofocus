@@ -1,5 +1,6 @@
 node_modules/
 temp_store/
+dist/
 *.js
 *.d.ts
 save.csv
