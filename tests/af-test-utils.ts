@@ -35,7 +35,6 @@ export const SIMcreateAndAddNewItem = (appData: IAppData) =>
 		currentState: 'menu',
 		myList: addItem(appData.myList)(createNewItem(
 			textInput)(genNextID(appData))),
-		myArchive: appData.myArchive,
 		lastDone: appData.lastDone
 	});
 
@@ -100,8 +99,7 @@ export const SIMenterFocusState = (appData: IAppData): IAppData =>
 			? returnAppDataBackToMenu(appData)
 			: ({currentState: 'menu',
 					lastDone: getCMWTDindex(appData.myList), // uses (soon-to-be) former CMWTD as the new last done 
-					myList: markCMWTDindexComplete(appData),
-					myArchive: appData.myArchive});
+					myList: markCMWTDindexComplete(appData)});
 
 // TODO: refactor imperative stub to use functional programming style (recursive loop)
 export const SIMfocusAMAP = (appData: IAppData): IAppData => {
@@ -172,7 +170,6 @@ export const SIMenterMarkAndReviewState = (appData: IAppData) =>
 	return reviewableAfterAutoMark
 		? ({currentState: 'menu',
 		myList: markByAnswerList(appData.myList)(appData.lastDone)(answers),
-		myArchive: appData.myArchive,
 		lastDone: appData.lastDone})
 		: returnAppDataBackToMenu(appData);
 		// TODO: confirm last branch activates, and prevents erroneous
