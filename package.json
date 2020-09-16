@@ -5,13 +5,17 @@
   "dependencies": {},
   "scripts": {
     "start": "ts-node src/index.ts",
-		"start2": "tsc && node src/index.js",
-		"start-cla": "tsc && ts-node src/console.ts",
+    "start2": "tsc && node src/index.js",
+    "start-cla": "tsc && ts-node src/console.ts",
     "build": "tsc",
     "test": "mocha tests/index.test.js --exit",
     "build-and-test": "yarn build && yarn test"
   },
-  "keywords": ["todos", "productivity", "focus"],
+  "keywords": [
+    "todos",
+    "productivity",
+    "focus"
+  ],
   "author": "",
   "license": "MIT",
   "description": "",
@@ -20,18 +24,23 @@
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.0.6",
     "chai": "^4.2.0",
+    "csvtojson": "^2.0.10",
     "mocha": "^8.0.1",
     "mocha-steps": "^1.3.0",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.3"
-	},
-	"resolutions": {
-		"**/**/lodash": "^4.17.19",
-		"**/**/serialize-javascript": "^3.1.0"
-	},
-	"types": "src/index.d.ts",
-	"files": ["src/index.js","src/index.ts", "src/index.d.ts"],
-	"comments": {
-		"start-cla":"placeholder script to build entire project & run command line app"
-	}
+  },
+  "resolutions": {
+    "**/**/lodash": "^4.17.19",
+    "**/**/serialize-javascript": "^3.1.0"
+  },
+  "types": "src/index.d.ts",
+  "files": [
+    "src/index.js",
+    "src/index.ts",
+    "src/index.d.ts"
+  ],
+  "comments": {
+    "start-cla": "placeholder script to build entire project & run command line app"
+  }
 }
