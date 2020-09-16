@@ -3,9 +3,9 @@ import { step } from "mocha-steps";
 
 import { IItem, findFirstMarkable, TItemStatus, getCMWTDstring, statusToMark, isReviewableList,
 	markFirstMarkableIfPossible, getFirstReviewableIndex, getCMWTDindex, isMarkableList, IAppData,
-	getTextByIndex, getStatusByIndex, createBlankData, countHideable, SIMresolveHideAndArchiveState,
-	hideAllCompletedInAppData, moveHiddenToArchive, UNSET_LASTDONE, countHidden,
-	mapUnmarkedToIDAndFilter, get1stUnmarkedIndexAfter
+	getTextByIndex, getStatusByIndex, createBlankData, countHideable,
+	hideAllCompletedInAppData, UNSET_LASTDONE, countHidden,
+	mapUnmarkedToIDAndFilter, get1stUnmarkedIndexAfter, toggleHideAllInAppData
 } from "../src";
 import { createGreeting, getPluralS, isPluralFromCount, notEmptyString, isNegOne, 
 	getPositiveMin } from "../src/fp-utility";
@@ -259,13 +259,18 @@ describe("FP TESTS", () => {
     });
 	});
 	
-	describe("hideAllCompleted", () => {
-		it("returns back item list where completed, unhidden items are hidden, archive is length of 1", () => {
+	// TODO: confirm that hideAllCompleted works as expected
+	describe("toggleHideAllInAppData", () => {
+		it("returns back item list where completed, unhidden items are hidden", () => {
 			let appData: IAppData = createDemoData(); // hover over function for JSDoc docstring documentation
 			expect(countHideable(appData.myList)).equals(1); // BEFORE
-			appData = moveHiddenToArchive(hideAllCompletedInAppData(appData));
+			appData = toggleHideAllInAppData(appData);
 			expect(countHideable(appData.myList)).equals(0); // AFTER
-			expect(appData.myArchive.length).equals(1);
+		})
+
+		// TODO: implement test stub
+		it.skip('returns back item list where completed, hidden items are all shown (unhidden)', () => {
+			expect(true).equals(false);
 		})
 	});
 
@@ -281,8 +286,6 @@ describe("FP TESTS", () => {
 			expect(myApp.myList.length).equals(0);
 		});
 
-		// Dev clarifies native API for item creation, enforces strict usage of
-		//     combined myList, myArchive count for ID generation #22
 		it('uses correctly incremented nextID', () => {
 			// 1. create blank app data
 			let myApp: IAppData = createBlankData();
@@ -293,13 +296,13 @@ describe("FP TESTS", () => {
 			// 4. focus on first item to complete it
 			myApp = SIMenterFocusState(myApp);
 			// 5. hide first item
-			myApp = moveHiddenToArchive(hideAllCompletedInAppData(myApp));
+			myApp = toggleHideAllInAppData(myApp);
 			// 6. create a new item w/ dummy text "b"
 			myApp = SIMcreateAndAddNewItem(myApp)("b");
 			// 7. expect that this newly created item "b" has an ID of 1 (correctly incremented)
-			//    and that the first item in the archive (item "a") is of ID 0
-			expect(myApp.myArchive[0].id).equals(0);
-			expect(myApp.myList[0].id).equals(1);
+			//    and that the first item in the list (item "a") is of ID 0
+			expect(myApp.myList[0].id).equals(0);
+			expect(myApp.myList[1].id).equals(1);
 		});
 	});
 });
@@ -624,10 +627,15 @@ describe("E2E TESTS", () => {
 		});
 	});
 
+	// OLD TEST:
 	// confirm resolution of bug where list with 2 items where
 	//   1 item is hidden and then archived and the remaining
 	//   unmarked item cannot be marked (but should be) 
-	describe("E2E test to isolate & confirm & resolve archive bug", () => {
+	// NEW TEST:
+	// confirm that an item can be hidden and then the remaining
+	// item can be interacted with in a manner which treats the
+	// hidden item as non-existant while it is hidden
+	describe("E2E test to confirm that hide/unhide toggle works as expected", () => {
 		let myApp: IAppData = createBlankData();
 		const firstTwo = ["a", "b"];
 
@@ -647,14 +655,13 @@ describe("E2E TESTS", () => {
 			expectMarksString(myApp)("[x] [ ]");
 		});
 
-		step("should confirm 1st item has been hidden & archived", () => {
-			myApp = SIMresolveHideAndArchiveState(myApp);
+		step("should confirm 1st item has been hidden by showing only one item in renderable list", () => {
+			myApp = toggleHideAllInAppData(myApp);
 			expectMarksString(myApp)("[ ]");
 		});
 
-		step("should confirm that both myList and myArchive have 1 item", () => {
-			expect(myApp.myList.length).equals(1);
-			expect(myApp.myArchive.length).equals(1);
+		step("should confirm that myList still has 2 items", () => {
+			expect(myApp.myList.length).equals(2);
 		});
 
 		step("should confirm myList isMarkable and NOT reviewable, and lastDone is unset", () => {
@@ -662,6 +669,8 @@ describe("E2E TESTS", () => {
 			expectReviewable(myApp)(false);
 			expectLastDoneUnset(myApp);
 		});
+
+		// TODO: continue E2E test to demonstrate hideAll, unhideAll, all by using only the toggle func
 	})
 
 	// attempt to "sort" (do in order) item list by number priority (1,2,3...N)
@@ -816,7 +825,7 @@ describe("REVIEW MODE INTEGRATION TESTS", () => {
 			// expect(countHideable(myApp.myList)).equals(1);
 			// expect(countHidden(myApp.myList)).equals(0);
 			
-			myApp = SIMresolveHideAndArchiveState(myApp);
+			myApp = toggleHideAllInAppData(myApp);
 			
 			// expect(countHideable(myApp.myList)).equals(0);
 			// expect(countHidden(myApp.myList)).equals(0);
