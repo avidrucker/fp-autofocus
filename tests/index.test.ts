@@ -664,10 +664,10 @@ describe("E2E TESTS", () => {
 			expect(myApp.myList.length).equals(2);
 		});
 
-		step("should confirm myList isMarkable and NOT reviewable, and lastDone is unset", () => {
+		step("should confirm myList isMarkable and NOT reviewable", () => {
 			expectMarkable(myApp)(true);
 			expectReviewable(myApp)(false);
-			expectLastDoneUnset(myApp);
+			// expectLastDoneUnset(myApp); // note: lastDone is not affected by toggleHide
 		});
 
 		// TODO: continue E2E test to demonstrate hideAll, unhideAll, all by using only the toggle func
