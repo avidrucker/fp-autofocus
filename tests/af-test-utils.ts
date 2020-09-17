@@ -1,8 +1,8 @@
 // function that focuses repeatedly until there are no more focusable items left
 
-import { IAppData, isFocusableList, getCMWTDindex, markCMWTDindexComplete, 
+import { IAppData, hasFocusableList, getCMWTDindex, markCMWTDindexComplete, 
 	createBlankData, IItem, TItemStatus, statusToMark, isMarkableList, isReviewableList, 
-	getFirstReviewableIndex, markFirstMarkableIfPossible, inBounds, isComplete, dotIndex, 
+	getFirstReviewableIndex, markFirstMarkableIfPossible, inBounds, isCompletedItem, dotIndex, 
 	Tindex, UNSET_LASTDONE, addItem, createNewItem, genNextID } from "../src";
 import { returnAppDataBackToMenu, TValidAnswer } from "../src/console";
 import { expect } from "chai";
@@ -95,7 +95,7 @@ export const makeNewDemoDataOfLength = (nLength: number): IAppData =>
 // and update lastDone to be the index of the (now former) CMWTD
 // else, returns app data back as-is
 export const SIMenterFocusState = (appData: IAppData): IAppData =>
-	!isFocusableList(appData)
+	!hasFocusableList(appData)
 			? returnAppDataBackToMenu(appData)
 			: ({currentState: 'menu',
 					lastDone: getCMWTDindex(appData.myList), // uses (soon-to-be) former CMWTD as the new last done 
@@ -103,7 +103,7 @@ export const SIMenterFocusState = (appData: IAppData): IAppData =>
 
 // TODO: refactor imperative stub to use functional programming style (recursive loop)
 export const SIMfocusAMAP = (appData: IAppData): IAppData => {
-	while(isFocusableList(appData)) {
+	while(hasFocusableList(appData)) {
 		appData = SIMenterFocusState(appData);
 	}
 	return appData;
@@ -123,7 +123,7 @@ export const SIMcommenceReview = (arr: IItem[]) => (lastDone: Tindex) => (answer
 		doneReviewing
 			? (// console.log(`Quitting review early...`),
 				doNothing())
-			: isComplete(arr[i])
+			: isCompletedItem(arr[i])
 				? (// console.log(`Skipping completed item at index ${i}`),
 					doNothing())
 				: !doneReviewing && answerAbbrevs[answerIndex] === 'y'
