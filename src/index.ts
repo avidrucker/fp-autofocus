@@ -1,8 +1,9 @@
 'use strict';
 
 import { existsInArr, isEmptyArr, isNegOne, isNeg, deepCopy, pushToAndReturnArr } from './fp-utility';
-import { automarkingFirstMarkable, nothingToToggleHide } from './af-strings';
+import { automarkingFirstMarkable, nothingToToggleHide, hidingAllHideable, showingAllShowable } from './af-strings';
 import { returnAppDataBackToMenu } from './console';
+import { count } from 'console';
 
 export type TItemStatus =  'unmarked' | 'dotted' | 'complete';
 
@@ -77,12 +78,14 @@ export const stringifyConcise = (i: IItem): string =>
 export const stringifyList = (xs: IItem[]): string[] =>
 	xs.map(x => stringifyConcise(x)) // ALT: stringifyVerbose(x)
 
+export const renderVisibleList = (xs: IItem[]): string[] =>
+	stringifyList(filterNotHidden(xs));
+
 export const genNextID = (appData: IAppData): Tid =>
   appData.myList.length;
 
 export const filterOnMarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === 'dotted')
-
 
 // TODO: refactor to take in appData (see code exported from PWA)
 // ~~TODO: refactor to not mutate state, and instead
@@ -93,6 +96,7 @@ export const dotIndex = (arr: IItem[]) => (i: Tindex): IItem[] =>
 			dotItem(x))
 		: x ));
 
+// TODO: clarify functionality by renaming function
 // arr === item list, i === index
 export const markComplete = (arr: IItem[]) => (i: Tindex): IItem[] =>
 	arr.map((x, current) => (current === i
@@ -100,6 +104,7 @@ export const markComplete = (arr: IItem[]) => (i: Tindex): IItem[] =>
 			completeItem(x))
 		: x ));
 
+// TODO: add documentation & example of input & output
 export const filterOnUnmarked = (arr: IItem[]) =>
 	arr.filter(x => x.status === 'unmarked')
 
@@ -309,6 +314,9 @@ export const hasShowableItems = (xs: IItem[]): boolean =>
 export const countHidden = (xs: IItem[]): number =>
 	xs.filter(x => x.isHidden).length;
 
+export const hasHiddenItems = (xs: IItem[]): boolean =>
+	countHidden(xs) > 0;
+
 export const countCompleted = (xs: IItem[]): number =>
 	xs.filter(x => x.status === 'complete').length;
 
@@ -348,9 +356,11 @@ export const showAllCompletedInAppData = (appData: IAppData): IAppData =>
 
 export const toggleHideAllInAppData = (appData: IAppData): IAppData =>
 	hasHideableItems(appData.myList)
-		? hideAllCompletedInAppData(appData)
+		? (console.log(hidingAllHideable),
+			hideAllCompletedInAppData(appData))
 		: hasShowableItems(appData.myList)
-			? showAllCompletedInAppData(appData)
+			? (console.log(showingAllShowable),
+				showAllCompletedInAppData(appData))
 			: (console.log(nothingToToggleHide),
 				returnAppDataBackToMenu(appData))
 
@@ -363,3 +373,6 @@ export const filterNotHidden = (xs: IItem[]): IItem[] =>
 
 export const createBlankData = (): IAppData =>
 	({ currentState: 'menu', myList: [], lastDone: UNSET_LASTDONE });
+
+export const genShowingXofYstr = (xs: IItem[]): string =>
+	`Showing ${xs.length - countHidden(xs)} of ${xs.length} items.`;

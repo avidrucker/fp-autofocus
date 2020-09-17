@@ -3,17 +3,16 @@ import readline from 'readline';
 import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy, inRangeInclusive } from './fp-utility';
 import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, 
 	cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, 
-	cantFocus, wantToHideCompleted, noHideableFound, confirmHiding, nothingToSave, listHeader, byeMessage, fence, menuHeader } from './af-strings';
-import { createBlankData, IAppData, stringifyList, genNextID, addItem, createNewItem, IItem, 
+	cantFocus, nothingToSave, listHeader, byeMessage, fence, menuHeader } from './af-strings';
+import { createBlankData, IAppData, genNextID, addItem, createNewItem, IItem, 
 	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
 	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
 	hasFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
-	hasHideableItems, hideAllCompletedInAppData, UNSET_LASTDONE, hideAllCompleted, countHidden, hasAllHidden, showAllCompletedInAppData, toggleHideAllInAppData } from '.';
+	UNSET_LASTDONE, toggleHideAllInAppData, genShowingXofYstr, renderVisibleList } from '.';
 
 import { exit } from 'process';
 import { returnJSONblogFromFile } from './af-load';
 import { serializeAppDataToCSV } from './af-save';
-// import { logJSONitem } from './af-debug';
 
 export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
 	({ currentState: 'menu',
@@ -39,25 +38,10 @@ const rl = readline.createInterface({
   output: process.stdout
 })
 
-// export const getNameIO = () =>
-// 	new Promise<string>((resolve) => {
-// 		rl.question('hi, what's your name?', (name: string) => { resolve(name)})
-// 	});
-
 export const askOpenEndedIO = (q: string) =>
 	new Promise<string>((resolve) => {
 		rl.question(q, (answer: string) => { resolve(answer)})
 	});
-
-// ISSUE: Dev implements fluture implementation instead of Promise based #16
-// export const askOptionalIO = (q: string) =>
-// 	new Promise<string>((resolve) => {
-// 		rl.question(q, (answer: string) => { 
-// 			answer.toLowerCase() === 'q'
-// 				? resolve('q')
-// 				: resolve(answer)	
-// 		})
-// 	});
 
 const askOptionalYNio = (question: string): Promise<string> =>
 	new Promise<string>((resolve) => {
@@ -93,9 +77,6 @@ export const getNumberFromUser = (first: number) => (last: number): Promise<numb
 				: resolve(getNumberFromUser(first)(last));
 		})
 	});
-
-// export const printBlankLine = (): void =>
-// 	console.log();
 
 ////////////////////////////////////////////
 // STATE TRANSITION LOGIC
@@ -190,13 +171,14 @@ const resolveSeeState = (arr: IItem[]): number =>
 	(//console.log(`RESOLVING SEE STATE...`),
 		printFence(),
 		printListHeader(),
-		printListOrStatus(stringifyList(arr)),
-		//// smartLog('myList')(arr)(true), // UNCOMMENT TO LOG: VERY USEFUL
+		console.log(genShowingXofYstr(arr)),
+		printListOrStatus(renderVisibleList(arr)),
+		//// smartLog('myList')(arr)(true), // uncomment to log
 		0);
 
 const resolveQuitState = (appData: IAppData): IAppData =>
 	(console.log(byeMessage),
-		// smartLogAll(appData), // TODO: COMMENT THIS OUT FOR APP PUBLISHING
+		// smartLogAll(appData), // uncomment to log
 		appData);
 
 const resolveAddState = async (appData: IAppData): Promise<IAppData> =>
@@ -240,8 +222,7 @@ const calcWillMark = (a: TAnswerState) =>
 	a === 'yes';
 
 // b === boolean conditional, i === index
-// TODO: rename function to getNextIndexIf
-const getNextIfTrue = (b: boolean) => (i: Tindex) =>
+const getNextIndexIf = (b: boolean) => (i: Tindex) =>
 	b ? i + 1 : i;
 
 // TODO: refactor spagetti code
@@ -260,7 +241,7 @@ const handleWhich = (arr: IItem[]) => (lastDone: Tindex) => (i: Tindex) =>
 						dotIndex(arr)(i))
 					: arr,
 				lastDone: lastDone,
-				currentIndex: getNextIfTrue(calcWillRepeat(a))(i)
+				currentIndex: getNextIndexIf(calcWillRepeat(a))(i)
 			})));
 
 const repeatIf = async (x: IListRepeater): Promise<IItem[]> =>
