@@ -14,4 +14,6 @@ A (mostly) functional programming style to-do list management system codebase. T
 - [x] Reimplement (re-enable) unit, integration, e2e tests
 - [x] Create `dist/` folder to keep `src/` and `tests/` clean & simple to work with
 - [ ] Upgrade `console.ts` CLA usage of algorithm to reflect updated understanding of "auto-mark"
-- [ ] Resolve bug where hidden items are (incorrectly) still rendered under "AUTOFOCUS LIST" heading
+- [x] Resolve bug where hidden items are (incorrectly) still rendered under "AUTOFOCUS LIST" heading
+- [x] Add "about section" text creator to `index.ts` to render in either `console.ts` or PWA
+- [ ] (optional) Experiment with word wrap to improve readability on CLA for about section
