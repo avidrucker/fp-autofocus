@@ -1,7 +1,7 @@
 'use strict';
 
 import { existsInArr, isEmptyArr, isNegOne, isNeg, deepCopy, pushToAndReturnArr } from './fp-utility';
-import { automarkingFirstMarkable, nothingToToggleHide, hidingAllHideable, showingAllShowable } from './af-strings';
+import { automarkingFirstMarkable, nothingToToggleHide, hidingAllHideable, showingAllShowable, claMadeWith, credits1, whyUseAnAlgoHeader, whyUseAnAlgoBody, howItWorksHeader, howItWorksBody, stepByStepExHeader, stepByStepExBody, fence, credits2 } from './af-strings';
 import { returnAppDataBackToMenu } from './console';
 import { count } from 'console';
 
@@ -374,5 +374,25 @@ export const filterNotHidden = (xs: IItem[]): IItem[] =>
 export const createBlankData = (): IAppData =>
 	({ currentState: 'menu', myList: [], lastDone: UNSET_LASTDONE });
 
+export const appIsSaveable = (appData: IAppData): boolean =>
+	appData.myList.length > 0;
+
 export const genShowingXofYstr = (xs: IItem[]): string =>
 	`Showing ${xs.length - countHidden(xs)} of ${xs.length} items.`;
+
+// ${stepByStepExHeader}
+// ${stepByStepExBody}
+export const renderAboutSectionStr = (): string =>
+`${fence}
+About AutoFocus
+
+${credits1}
+${credits2}
+
+${whyUseAnAlgoHeader}
+${whyUseAnAlgoBody}
+
+${howItWorksHeader}
+${howItWorksBody}
+
+${claMadeWith}`;

@@ -3,15 +3,15 @@ import readline from 'readline';
 import { createGreeting, isEmptyArr, isNegOne, existsInArr, deepCopy, inRangeInclusive } from './fp-utility';
 import { emptyList, enterNewItem, readAboutApp, errorReadingState, makeMenuSelection, 
 	cantMarkOrReviewBecauseNoItems, notMarkableOrReviewable, skippingReview, doneFocusing, 
-	cantFocus, nothingToSave, listHeader, byeMessage, fence, menuHeader } from './af-strings';
+	cantFocus, nothingToSave, listHeader, byeMessage, fence, menuHeader, pressEnterKeyToReturn } from './af-strings';
 import { createBlankData, IAppData, genNextID, addItem, createNewItem, IItem, 
 	TAppState, Tindex, isMarkableList, markFirstMarkableIfPossible, isReviewableList, 
 	getFirstReviewableIndex, inBounds, dotIndex, getStatusByIndex, getTextByIndex, getCMWTDstring, 
 	hasFocusableList, getCMWTDindex, markCMWTDindexComplete, duplicateLastDoneandAddToList, 
-	UNSET_LASTDONE, toggleHideAllInAppData, genShowingXofYstr, renderVisibleList } from '.';
+	UNSET_LASTDONE, toggleHideAllInAppData, genShowingXofYstr, renderVisibleList, renderAboutSectionStr, appIsSaveable } from '.';
 
 import { exit } from 'process';
-import { returnJSONblogFromFile } from './af-load';
+import { returnJSONblogFromFile, itemifyJSONitem } from './af-load';
 import { serializeAppDataToCSV } from './af-save';
 
 export const returnAppDataBackToMenu = (appData: IAppData): IAppData =>
@@ -169,7 +169,8 @@ const printListHeader = (): void =>
 
 const resolveSeeState = (arr: IItem[]): number =>
 	(//console.log(`RESOLVING SEE STATE...`),
-		printFence(),
+		console.clear(),
+		// printFence(),
 		printListHeader(),
 		console.log(genShowingXofYstr(arr)),
 		printListOrStatus(renderVisibleList(arr)),
@@ -296,12 +297,12 @@ const resolveMarkStateAndReviewState = async (appData: IAppData): Promise<IAppDa
 }
 
 // CRITICAL: TODO: add IO suffix to signal this function requires user interaction/input
-const promptUserForAnyKey = async () =>
-	askOpenEndedIO(doneFocusing);
+const promptUserForAnyKeyIO = async (messageStr: string) =>
+	await askOpenEndedIO(messageStr);
 
 // CRITICAL: TODO: add IO suffix to signal this function requires user interaction/input
 const displayCMWTDandWaitForUser = async (appData: IAppData): Promise<IAppData> =>
-	(await promptUserForAnyKey(),
+	(await promptUserForAnyKeyIO(doneFocusing),
 	// TODO: implement 'do you have work remaining on this task? (y/n)'
 	//   follow-up question to quick-create a new item
 	{currentState: 'menu',
@@ -336,20 +337,24 @@ const resolveFocusState = async (appData: IAppData): Promise<IAppData> =>
 		: (console.log(cantFocus),
 			returnAppDataBackToMenu(appData));
 
-const resolveReadAboutState = (): number =>
-	(console.log(readAboutApp), 0); // TODO: implement stub
+const resolveReadAboutStateIO = async (): Promise<number> => {
+	await (console.clear(),
+		console.log(renderAboutSectionStr()),
+		promptUserForAnyKeyIO(pressEnterKeyToReturn));
+	return 0;
+}
 
 const resolveNonMutatingErrorState = (): number =>
 	(console.log(errorReadingState), -1)
 
 // https://hackernoon.com/rethinking-javascript-eliminate-the-switch-statement-for-better-code-5c81c044716d
 // TODO: refactor with switchcaseF
-const enterNonMutatingState = (appData: IAppData): number =>
+const enterNonMutatingState = async (appData: IAppData): Promise<number> =>
 	appData.currentState === 'see'
 		// TODO: make clear to user that list has been split into hidden and visible
 		? resolveSeeState(appData.myList) // .filter(x => !x.isHidden)
 		: appData.currentState === 'read-about'
-			? resolveReadAboutState()
+			? await resolveReadAboutStateIO()
 			: resolveNonMutatingErrorState();
 
 const resolveMutatingErrorState = (appData: IAppData): IAppData =>
@@ -378,9 +383,6 @@ const resolveToggleHideState = (appData: IAppData): IAppData =>
 	// 		: (console.log(noHideableFound),
 	// 			returnAppDataBackToMenu(appData));
 
-const appIsSaveable = (appData: IAppData): boolean =>
-	appData.myList.length > 0;
-
 const resolveSaveState = async (appData: IAppData): Promise<IAppData> =>
 	!appIsSaveable(appData)
 		? (console.log(nothingToSave),
@@ -389,15 +391,6 @@ const resolveSaveState = async (appData: IAppData): Promise<IAppData> =>
 			serializeAppDataToCSV(appData),
 			returnAppDataBackToMenu(appData)
 		);
-
-const itemifyJSONitem = (x: any) => (
-	// logJSONitem(x),
-	({
-		id: Number(x.id),
-		status: x.status,
-		textName: x.textName,
-		isHidden: Number(x.isHidden)
-	}));
 
 // TODO: confirm that blank data is loaded when there are any issues
 //   loading (load data is bad or missing)
@@ -431,8 +424,8 @@ const mutatorStates: TAppState[] = ['menu', 'add', 'mark', 'do', 'hide', 'save',
 const stateIsMutator = (s: TAppState) => (mss: TAppState[]) =>
 	!isNegOne(mss.indexOf(s));
 
-const wrapNonMutatingStateEntry = (appData: IAppData): IAppData =>
-	(enterNonMutatingState(appData),
+const wrapNonMutatingStateEntry = async (appData: IAppData): Promise<IAppData> =>
+	(await enterNonMutatingState(appData),
 	returnAppDataBackToMenu(appData))
 
 const enterMenu = async (appData: IAppData): Promise<IAppData> =>
@@ -441,7 +434,7 @@ const enterMenu = async (appData: IAppData): Promise<IAppData> =>
 		: enterMenu(
 			stateIsMutator(appData.currentState)(mutatorStates)
 				? await enterMutatingState(appData)
-				: wrapNonMutatingStateEntry(appData));
+				: await wrapNonMutatingStateEntry(appData));
 
 const runProgram = (running: boolean) => 
 	async (appData: IAppData): Promise<IAppData> =>
