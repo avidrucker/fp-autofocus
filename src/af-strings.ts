@@ -25,3 +25,5 @@ export const listHeader = 'AUTOFOCUS LIST';
 export const byeMessage = `See you!`;
 export const fence = `----------`;
 export const menuHeader = 'MAIN MENU';
+export const hidingAllHideable = `Hiding all hideable items...`;
+export const showingAllShowable = `Showing all showable items...`;
