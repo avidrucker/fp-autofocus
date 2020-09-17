@@ -1,8 +1,8 @@
-"use strict";
+'use strict';
 
-import { existsInArr, isEmptyArr, isNegOne, isNeg, deepCopy, pushToAndReturnArr } from "./fp-utility";
-import { automarkingFirstMarkable, nothingToToggleHide } from "./af-strings";
-import { returnAppDataBackToMenu } from "./console";
+import { existsInArr, isEmptyArr, isNegOne, isNeg, deepCopy, pushToAndReturnArr } from './fp-utility';
+import { automarkingFirstMarkable, nothingToToggleHide } from './af-strings';
+import { returnAppDataBackToMenu } from './console';
 
 export type TItemStatus =  'unmarked' | 'dotted' | 'complete';
 
@@ -40,7 +40,7 @@ export type TAppState = 'menu' | 'see' | 'add' | 'mark' | 'do' |
 
 /** @type {Function} inbetween API which prevents newItems with invalid nameInput text from being added */
 export const addItem = (arr: IItem[]) => (newItem: IItem): IItem[] =>
-	newItem.textName !== ""
+	newItem.textName !== ''
 	? (//console.log(`Adding new item '${newItem.textName}' to list...`),
 		pushToAndReturnArr(arr)(newItem))
 	: (console.log(`Missing item text: Please try again with text input.`),
@@ -81,7 +81,7 @@ export const genNextID = (appData: IAppData): Tid =>
   appData.myList.length;
 
 export const filterOnMarked = (arr: IItem[]) =>
-	arr.filter(x => x.status === "dotted")
+	arr.filter(x => x.status === 'dotted')
 
 
 // TODO: refactor to take in appData (see code exported from PWA)
@@ -101,7 +101,7 @@ export const markComplete = (arr: IItem[]) => (i: Tindex): IItem[] =>
 		: x ));
 
 export const filterOnUnmarked = (arr: IItem[]) =>
-	arr.filter(x => x.status === "unmarked")
+	arr.filter(x => x.status === 'unmarked')
 
 export const hasUnmarked = (arr: IItem[]): boolean =>
 	isPositive(filterOnUnmarked(arr).length);
@@ -113,7 +113,7 @@ export const getLastIndexOf = (arr: IItem[]) => (s: TItemStatus): Tindex =>
 export const listHasUnmarkedAfterIndex = (arr: IItem[]) => (i: Tindex): boolean =>
 	i === -1
 	? hasUnmarked(arr)
-	: getLastIndexOf(arr)("unmarked") > i;
+	: getLastIndexOf(arr)('unmarked') > i;
 
 export const hasMarked = (arr: IItem[]): boolean =>
 	isPositive(countMarked(arr));
@@ -142,7 +142,7 @@ export const countMarked = (arr: IItem[]): number =>
 	filterOnMarked(arr).length;
 
 export const mapUnmarkedToIDAndFilter = (arr: IItem[]): Tid[] =>
-	arr.filter(x => x.status === "unmarked").map(x => x.id);
+	arr.filter(x => x.status === 'unmarked').map(x => x.id);
 
 
 
@@ -191,11 +191,11 @@ export const isPositive = (n: number): boolean =>
 // b. there is at least one unmarked item after the last marked item
 export const isReviewableList = (arr: IItem[]) => (lastDone: Tindex): boolean =>
 	!hasUnmarked(arr)
-		? (// console.log("... A: no unmarked"),
+		? (// console.log('... A: no unmarked'),
 			false)
 		: isNegOne(getCMWTDindex(arr)) // && isNegOne(lastDone) 
-			? (// console.log("... B: CMWTD does not exist"),
-				// console.log("... B: neither CMWTD nor lastDone exist"),
+			? (// console.log('... B: CMWTD does not exist'),
+				// console.log('... B: neither CMWTD nor lastDone exist'),
 				false)
 			// : !isNegOne(lastDone) && listHasUnmarkedAfterIndex(arr)(lastDone)
 			// 	? (console.log(`... C. using lastDone as substitute CMWTD`),
@@ -228,10 +228,10 @@ export const getFirstReviewableIndex = (arr: IItem[]) => (lastDone: Tindex): Tin
 export const getCMWTDstring = (arr: IItem[]): string =>
 	!isNegOne(getCMWTDindex(arr))
 		? arr[getCMWTDindex(arr)].textName
-		: "undefined";
+		: 'undefined';
 
 // CRITICAL: TODO: clarify naming convention for functions that work with lists, vs with app data,
-//    and, more specifically & concretely for getCMWTDindex, to either add "FromList" suffix or
+//    and, more specifically & concretely for getCMWTDindex, to either add 'FromList' suffix or
 //    modify to work with app data 
 // returns -1 if there is no CMWTD
 export const getCMWTDindex = (arr: IItem[]): Tindex =>
@@ -261,13 +261,12 @@ export const inBounds = (arr: IItem[]) => (i: Tindex) =>
 		// : (//console.log(`... going out of bounds.`),
 		// 	false);
 
-// TODO: rename function to "isCompletedItem" to clarify inputs/outputs
-export const isComplete = (x: IItem): boolean =>
+// TODO: rename function to 'isCompletedItem' to clarify inputs/outputs
+export const isCompletedItem = (x: IItem): boolean =>
 	x.status === 'complete';
 
-// CRITICAL: TODO: rename function to clarify "app data contains focusable list",
-//    such as "appDataHasFocusableList", also, see imported functions from "autofocus-pwa"
-export const isFocusableList = (appData: IAppData): boolean =>
+// TODO: see imported functions from 'autofocus-pwa' (there may be overlap, dup code)
+export const hasFocusableList = (appData: IAppData): boolean =>
 	!isNegOne(getCMWTDindex(appData.myList))
 
 
