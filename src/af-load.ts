@@ -13,19 +13,11 @@ export const returnJSONblogFromFile = async (csvFilePath: string): Promise<any[]
 	await csv().fromFile(csvFilePath).then(x => (
 		console.log(`${x.length} items loaded.`), x)); // , console.log(x)
 
-export const printSaveFile = async (csvFilePath: string) =>
-	await csv()
-		.fromFile(csvFilePath)
-		.then((jsonObj)=>{
-			console.log(jsonObj);
-			/**
-			 * [
-			 * 	{a:"1", b:"2", c:"3"},
-			 * 	{a:"4", b:"5". c:"6"}
-			 * ]
-			 */ 
-		});
-
-// export const getJSONfromSave = ()
-
-// const jsonArray=await csv().fromFile(csvFilePath);
+export const itemifyJSONitem = (x: any) => (
+	// logJSONitem(x),
+	({
+		id: Number(x.id),
+		status: x.status,
+		textName: x.textName,
+		isHidden: Number(x.isHidden)
+	}));
