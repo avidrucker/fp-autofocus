@@ -37,3 +37,11 @@ export const logJSONitem = (x: any): void => (
 // ISSUE: Dev replaces custom prints with `smartLog()()()` #25
 // const printMarkedCount = (arr: IItem[]): void =>
 // 	console.log(`The # of marked items is now ${countMarked(arr)}`)
+
+// loading log function
+// export const printSaveFile = async (csvFilePath: string) =>
+// 	await csv()
+// 		.fromFile(csvFilePath)
+// 		.then((jsonObj)=>{
+// 			console.log(jsonObj);
+// 		});
